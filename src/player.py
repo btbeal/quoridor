@@ -17,41 +17,42 @@ class Player(pygame.sprite.Sprite):
     def update(self, events, current_player, nodes, walls):
         for event in events:
             if event.type == pygame.KEYDOWN and current_player == self.player_number:
+                current_node = self._current_node(nodes)
                 if event.key == pygame.K_UP:
-                    self._move_up(nodes, walls)
-                    self.rect.y -= DISTANCE
+                    self._move(nodes, walls, current_node, 'up')
                 if event.key == pygame.K_DOWN:
-                    self.rect.y += DISTANCE
+                    self._move(nodes, walls, current_node, 'down')
                 if event.key == pygame.K_RIGHT:
-                    self.rect.x += DISTANCE
+                    self._move(nodes, walls, current_node, 'right')
                 if event.key == pygame.K_LEFT:
+                    self._move(nodes, walls, current_node, 'left')
+
+    def _move(self, nodes, walls, current_node, direction):
+        proximal_node = get_proximal_object(self.rect.center, direction, DISTANCE, nodes)
+        proximal_wall = get_proximal_object(self.rect.center, direction, HALF_DISTANCE, walls)
+
+        if proximal_wall and not proximal_wall.is_occupied:
+            if proximal_node and not proximal_node.is_occupied:
+                if direction == 'up':
+                    self.rect.y -= DISTANCE
+                elif direction == 'down':
+                    self.rect.y += DISTANCE
+                elif direction == 'left':
                     self.rect.x -= DISTANCE
+                elif direction == 'right':
+                    self.rect.x += DISTANCE
 
-    def _move_up(self, nodes, walls):
-        node_coord_to_check = get_new_position(curr_position=self.rect.center, direction='down', distance=DISTANCE)
-        immediate_wall_coord_to_check = get_new_position(curr_position=self.rect.center, direction='down', distance=DISTANCE)
-        proximal_wall = get_proximal_object(
-            curr_position=self.rect.center, direction='up', distance=HALF_DISTANCE, desired_object_group=walls
-        )
-        if proximal_wall:
-            print(proximal_wall[0].is_occupied)
-        # _validate_pawn_move() by...
-        # check node below
-            # if node occupied by pawn (node.is_occupied)
-                # check for wall after pawn (wall.is_occupied)
-                # if not wall_after_pawn
-                # can jump (no need to assess if both nodes are occupied for two players)
-        pass
+                proximal_node.is_occupied = True
+                current_node.is_occupied = False
+        else:
+            print("ya can't do that")
 
-    def _move_down(self):
-        pass
+    def _current_node(self, nodes):
+        for node in nodes:
+            if node.position == self.rect.center:
+                return node
 
-    def _move_left(self):
-        pass
-
-    def _move_right(self):
-        pass
-
+        return None
 
 def assemble_player_group():
     player_group = Group()

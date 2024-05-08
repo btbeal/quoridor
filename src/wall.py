@@ -37,16 +37,14 @@ class Wall(pygame.sprite.Sprite):
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and hit:
                 adjacent_wall = self._get_adjacent_wall(walls)
-                if adjacent_wall:
-                    adjacent_wall = adjacent_wall[0]
-                    if not adjacent_wall.is_occupied:
-                        proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
-                        if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
-                            self._place_wall()
-                            self._place_adjacent_wall(adjacent_wall)
-                            self._union_walls(adjacent_wall, proposed_new_wall)
+                if adjacent_wall and not adjacent_wall.is_occupied:
+                    proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
+                    if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
+                        self.place_wall()
+                        self._place_adjacent_wall(adjacent_wall)
+                        self._union_walls(adjacent_wall, proposed_new_wall)
 
-    def _place_wall(self):
+    def place_wall(self):
         self.is_occupied = True
         self.image = self.hover_image
 
@@ -55,13 +53,16 @@ class Wall(pygame.sprite.Sprite):
             coordinate_to_search = get_new_position(curr_position=self.position, direction='right', distance=DISTANCE)
         else:
             coordinate_to_search = get_new_position(curr_position=self.position, direction='down', distance=DISTANCE)
-        wall = [wall for wall in walls if wall.position == coordinate_to_search]
 
-        return wall
+        for wall in walls:
+            if wall.position == coordinate_to_search:
+                return wall
+
+        return None
 
     @staticmethod
     def _place_adjacent_wall(adjacent_wall):
-        adjacent_wall._place_wall()
+        adjacent_wall.place_wall()
 
     def _get_potential_union_rect(self, adjacent_wall):
         return pygame.Rect.union(self.rect, adjacent_wall.rect)
@@ -71,9 +72,7 @@ class Wall(pygame.sprite.Sprite):
             self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
         else:
             self.image = self._create_image(TAN, adjacent_wall.w, adjacent_wall.h + self.h + SMALL_CELL)
-
         self.rect = new_rect
-        adjacent_wall.kill()
 
     @staticmethod
     def _new_wall_intersects_existing_wall(new_rect, walls):
