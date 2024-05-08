@@ -3,11 +3,13 @@ from src.assemble_board import assemble_board_component_groups
 from src.constants import SCREEN_SIZE_X, SCREEN_SIZE_Y
 from src.player import assemble_player_group
 from src.utils import get_current_player
+from src.game_display import text_rect, box_rect, text
 
 nodes, walls = assemble_board_component_groups()
 players = assemble_player_group()
 WHITE = (255, 255, 255)
-
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
 
 class Quoridor:
     def __init__(self):
@@ -36,6 +38,12 @@ class Quoridor:
             walls.draw(self.screen)
             nodes.draw(self.screen)
             players.draw(self.screen)
+            pygame.draw.rect(self.screen, GRAY, box_rect)
+            pygame.draw.rect(self.screen, BLACK, box_rect, 2)  # Draw outline
+
+            # Blit the text onto the screen
+            screen.blit(text, text_rect)
+
             pygame.display.flip()
 
     pygame.quit()

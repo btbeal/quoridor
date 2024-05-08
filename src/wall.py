@@ -1,6 +1,6 @@
 import pygame
-from src.constants import DISTANCE, HALF_DISTANCE, SMALL_CELL
-from src.utils import get_new_position, get_current_player
+from src.constants import DISTANCE, SMALL_CELL
+from src.utils import get_new_position
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
