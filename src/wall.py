@@ -1,5 +1,5 @@
 import pygame
-from src.constants import DISTANCE
+from src.constants import DISTANCE, SMALL_CELL
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
@@ -20,7 +20,8 @@ class Wall(pygame.sprite.Sprite):
         self.position = position
         self.is_occupied = False
 
-    def _create_image(self, color, w, h):
+    @staticmethod
+    def _create_image(color, w, h):
         img = pygame.Surface([w, h])
         img.fill(color)
 
@@ -38,14 +39,18 @@ class Wall(pygame.sprite.Sprite):
                 # check curr wall and adjacent wall
                 adjacent_wall = self.get_adjacent_wall(walls)
                 if adjacent_wall:
-                    self.place_wall()
-                    self.place_adjacent_wall(adjacent_wall)
+                    adjacent_wall = adjacent_wall[0]
+                    if not adjacent_wall.is_occupied:
+                        self.place_wall()
+                        self.place_adjacent_wall(adjacent_wall)
+                        self.union_walls(adjacent_wall)
 
     def place_wall(self):
         self.is_occupied = True
         self.image = self.hover_image
 
-    def place_adjacent_wall(self, adjacent_wall):
+    @staticmethod
+    def place_adjacent_wall(adjacent_wall):
         adjacent_wall.place_wall()
 
     def get_adjacent_wall(self, walls):
@@ -54,8 +59,17 @@ class Wall(pygame.sprite.Sprite):
         else:
             coordinate_to_search = tuple(map(sum, zip(self.position, (0, DISTANCE))))
         wall = [wall for wall in walls if wall.position == coordinate_to_search]
-        print(wall[0])
-        return wall[0]
+
+        return wall
+
+    def union_walls(self, adjacent_wall):
+        if self.horizontal:
+            self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
+        else:
+            self.image = self._create_image(TAN, adjacent_wall.w, adjacent_wall.h + self.h + SMALL_CELL)
+
+        self.rect = pygame.Rect.union(self.rect, adjacent_wall.rect)
+        adjacent_wall.kill()
 
 
 
