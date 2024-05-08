@@ -1,6 +1,6 @@
 import pygame
 from src.constants import DISTANCE, HALF_DISTANCE, SMALL_CELL
-from src.utils import get_new_position
+from src.utils import get_new_position, get_current_player
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
@@ -35,7 +35,7 @@ class Wall(pygame.sprite.Sprite):
             self.image = self.hover_image if hit else self.original_image
 
         for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and hit:
+            if event.type == pygame.MOUSEBUTTONDOWN and hit and current_player.total_walls != 0:
                 adjacent_wall = self._get_adjacent_wall(walls)
                 if adjacent_wall and not adjacent_wall.is_occupied:
                     proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
@@ -43,6 +43,7 @@ class Wall(pygame.sprite.Sprite):
                         self.place_wall()
                         self._place_adjacent_wall(adjacent_wall)
                         self._union_walls(adjacent_wall, proposed_new_wall)
+                        current_player.total_walls -= 1
 
     def place_wall(self):
         self.is_occupied = True
@@ -79,6 +80,5 @@ class Wall(pygame.sprite.Sprite):
         existing_walls = [wall for wall in walls if wall.is_occupied]
 
         return new_rect.collideobjects(existing_walls)
-
 
 

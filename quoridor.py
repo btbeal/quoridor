@@ -1,7 +1,8 @@
 import pygame
 from src.assemble_board import assemble_board_component_groups
-from src.constants import BOARD_SIZE
+from src.constants import SCREEN_SIZE_X, SCREEN_SIZE_Y
 from src.player import assemble_player_group
+from src.utils import get_current_player
 
 nodes, walls = assemble_board_component_groups()
 players = assemble_player_group()
@@ -11,7 +12,7 @@ WHITE = (255, 255, 255)
 class Quoridor:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((BOARD_SIZE, BOARD_SIZE))
+        self.screen = pygame.display.set_mode((SCREEN_SIZE_X, SCREEN_SIZE_Y))
         self.current_player = 1
 
     pygame.display.set_caption("Quoridor")
@@ -29,8 +30,9 @@ class Quoridor:
                     current_player = 3 - current_player
 
             self.screen.fill(WHITE)
-            walls.update(events, current_player, walls)
-            players.update(events, current_player, nodes, walls)
+            curr_player = get_current_player(current_player, players)
+            walls.update(events, curr_player, walls)
+            players.update(events, curr_player, nodes, walls)
             walls.draw(self.screen)
             nodes.draw(self.screen)
             players.draw(self.screen)

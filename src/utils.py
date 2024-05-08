@@ -18,3 +18,9 @@ def get_new_position(curr_position, direction, distance):
         new_position = tuple(map(sum, zip(curr_position, (0, distance))))
 
     return new_position
+
+
+def get_current_player(current_player, player_group):
+    for player in player_group:
+        if player.player_number == current_player:
+            return player
