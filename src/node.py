@@ -10,6 +10,8 @@ class Node(pygame.sprite.Sprite):
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.rect.center = position
+        self.position = position
+        self.is_occupied = False
 
 
 

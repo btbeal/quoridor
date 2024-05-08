@@ -1,5 +1,6 @@
 import pygame
-from src.constants import DISTANCE, SMALL_CELL
+from src.constants import DISTANCE, HALF_DISTANCE, SMALL_CELL
+from src.utils import get_new_position
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
@@ -51,16 +52,16 @@ class Wall(pygame.sprite.Sprite):
 
     def _get_adjacent_wall(self, walls):
         if self.horizontal:
-            coordinate_to_search = tuple(map(sum, zip(self.position, (DISTANCE, 0))))
+            coordinate_to_search = get_new_position(curr_position=self.position, direction='right', distance=DISTANCE)
         else:
-            coordinate_to_search = tuple(map(sum, zip(self.position, (0, DISTANCE))))
+            coordinate_to_search = get_new_position(curr_position=self.position, direction='down', distance=DISTANCE)
         wall = [wall for wall in walls if wall.position == coordinate_to_search]
 
         return wall
 
     @staticmethod
     def _place_adjacent_wall(adjacent_wall):
-        adjacent_wall.place_wall()
+        adjacent_wall._place_wall()
 
     def _get_potential_union_rect(self, adjacent_wall):
         return pygame.Rect.union(self.rect, adjacent_wall.rect)
