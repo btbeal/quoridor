@@ -35,25 +35,21 @@ class Wall(pygame.sprite.Sprite):
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and hit:
-                # wall can be placed
-                # check curr wall and adjacent wall
-                adjacent_wall = self.get_adjacent_wall(walls)
+                adjacent_wall = self._get_adjacent_wall(walls)
                 if adjacent_wall:
                     adjacent_wall = adjacent_wall[0]
                     if not adjacent_wall.is_occupied:
-                        self.place_wall()
-                        self.place_adjacent_wall(adjacent_wall)
-                        self.union_walls(adjacent_wall)
+                        proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
+                        if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
+                            self._place_wall()
+                            self._place_adjacent_wall(adjacent_wall)
+                            self._union_walls(adjacent_wall, proposed_new_wall)
 
-    def place_wall(self):
+    def _place_wall(self):
         self.is_occupied = True
         self.image = self.hover_image
 
-    @staticmethod
-    def place_adjacent_wall(adjacent_wall):
-        adjacent_wall.place_wall()
-
-    def get_adjacent_wall(self, walls):
+    def _get_adjacent_wall(self, walls):
         if self.horizontal:
             coordinate_to_search = tuple(map(sum, zip(self.position, (DISTANCE, 0))))
         else:
@@ -62,14 +58,27 @@ class Wall(pygame.sprite.Sprite):
 
         return wall
 
-    def union_walls(self, adjacent_wall):
+    @staticmethod
+    def _place_adjacent_wall(adjacent_wall):
+        adjacent_wall.place_wall()
+
+    def _get_potential_union_rect(self, adjacent_wall):
+        return pygame.Rect.union(self.rect, adjacent_wall.rect)
+
+    def _union_walls(self, adjacent_wall, new_rect):
         if self.horizontal:
             self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
         else:
             self.image = self._create_image(TAN, adjacent_wall.w, adjacent_wall.h + self.h + SMALL_CELL)
 
-        self.rect = pygame.Rect.union(self.rect, adjacent_wall.rect)
+        self.rect = new_rect
         adjacent_wall.kill()
+
+    @staticmethod
+    def _new_wall_intersects_existing_wall(new_rect, walls):
+        existing_walls = [wall for wall in walls if wall.is_occupied]
+
+        return new_rect.collideobjects(existing_walls)
 
 
 
