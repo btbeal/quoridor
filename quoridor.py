@@ -4,7 +4,6 @@ from src.constants import BOARD_SIZE
 from src.player import assemble_player_group
 
 nodes, walls = assemble_board_component_groups()
-print(nodes)
 players = assemble_player_group()
 WHITE = (255, 255, 255)
 
@@ -19,24 +18,25 @@ class Quoridor:
 
     def play_game(self):
         running = True
+        current_player = 1
         while running:
-            for event in pygame.event.get():
+            events = pygame.event.get()
+            for event in events:
                 if event.type == pygame.QUIT:
-                    running = False
-                    break
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()
-                    for single_wall in walls:
-                        if single_wall.rect.collidepoint(mouse_pos):
-                            single_wall.update()
+                    pygame.quit()
+                    quit()
+                elif event.type == pygame.KEYDOWN or event.type == pygame.KEYDOWN:
+                    current_player = 3 - current_player
 
-                self.screen.fill(WHITE)
-                walls.draw(self.screen)
-                nodes.draw(self.screen)
-                players.draw(self.screen)
-                pygame.display.flip()
+            self.screen.fill(WHITE)
+            walls.update(events, current_player, walls)
+            players.update(events, current_player)
+            walls.draw(self.screen)
+            nodes.draw(self.screen)
+            players.draw(self.screen)
+            pygame.display.flip()
 
-        pygame.quit()
+    pygame.quit()
 
 
 if __name__ == '__main__':
