@@ -4,6 +4,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
 # Font settings
+pygame.font.init()
 font = pygame.font.Font(None, 36)
 text = font.render("Nice job, Player 1", True, BLACK)
 text_rect = text.get_rect()
