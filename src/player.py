@@ -56,6 +56,7 @@ class Player(pygame.sprite.Sprite):
 
         return None
 
+
 def assemble_player_group():
     player_group = Group()
     player_one = Player(player_number=1, color=pygame.Color("coral"), position=(GAME_SIZE*0.5, HALF_DISTANCE), radius=0.5*CELL)
