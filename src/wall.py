@@ -28,7 +28,7 @@ class Wall(pygame.sprite.Sprite):
 
         return img
 
-    def update(self, events, current_player, walls):
+    def update(self, events, walls):
         pos = pygame.mouse.get_pos()
         hit = self.rect.collidepoint(pos)
         if not self.is_occupied:
@@ -46,7 +46,7 @@ class Wall(pygame.sprite.Sprite):
 
                 return True
 
-        return None
+        return False
 
     def _get_adjacent_wall(self, walls):
         if self.horizontal:

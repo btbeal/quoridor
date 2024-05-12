@@ -17,20 +17,27 @@ class Player(pygame.sprite.Sprite):
         self.position = position
 
     def update(self, events, nodes, walls, player_turn):
+        success = False
         for event in events:
             if player_turn == self.player_number:
                 if event.type == pygame.KEYDOWN:
-                    current_node = self._current_node(nodes)
-                    if event.key == pygame.K_UP:
-                        self._move(nodes, walls, current_node, 'up')
-                    if event.key == pygame.K_DOWN:
-                        self._move(nodes, walls, current_node, 'down')
-                    if event.key == pygame.K_RIGHT:
-                        self._move(nodes, walls, current_node, 'right')
-                    if event.key == pygame.K_LEFT:
-                        self._move(nodes, walls, current_node, 'left')
+                    if event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
+                        current_node = self._current_node(nodes)
+                        if event.key == pygame.K_UP:
+                            success = self._move(nodes, walls, current_node, 'up')
+                        if event.key == pygame.K_DOWN:
+                            success = self._move(nodes, walls, current_node, 'down')
+                        if event.key == pygame.K_RIGHT:
+                            success = self._move(nodes, walls, current_node, 'right')
+                        if event.key == pygame.K_LEFT:
+                            success = self._move(nodes, walls, current_node, 'left')
+
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self._place_wall(walls)
+                    success = self._place_wall(walls)
+                    if success:
+                        self.total_walls -= 1
+
+        return success
 
     def _move(self, nodes, walls, current_node, direction):
         proximal_node = get_proximal_object(self.rect.center, direction, DISTANCE, nodes)
@@ -49,16 +56,21 @@ class Player(pygame.sprite.Sprite):
 
                 proximal_node.is_occupied = True
                 current_node.is_occupied = False
+                successful_move = True
         else:
-            print("ya can't do that")
+            successful_move = False
 
-    def _place_wall(self, walls):
+        return successful_move
+
+    @staticmethod
+    def _place_wall(walls):
         pos = pygame.mouse.get_pos()
+        successful_build = False
         for wall in walls:
             if wall.rect.collidepoint(pos):
                 successful_build = wall.make_wall(walls)
-                if successful_build:
-                    self.total_walls -= 1
+
+        return successful_build
 
     def _current_node(self, nodes):
         for node in nodes:
