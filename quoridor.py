@@ -37,7 +37,7 @@ class Quoridor:
             curr_player = get_current_player(current_player, players)
 
             walls.update(events, curr_player, walls)
-            players.update(events, curr_player, nodes, walls)
+            players.update(events, nodes, walls, current_player)
 
             walls.draw(self.screen)
             nodes.draw(self.screen)

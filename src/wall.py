@@ -34,20 +34,19 @@ class Wall(pygame.sprite.Sprite):
         if not self.is_occupied:
             self.image = self.hover_image if hit else self.original_image
 
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and hit and current_player.total_walls != 0:
-                adjacent_wall = self._get_adjacent_wall(walls)
-                if adjacent_wall and not adjacent_wall.is_occupied:
-                    proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
-                    if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
-                        self.place_wall()
-                        self._place_adjacent_wall(adjacent_wall)
-                        self._union_walls(adjacent_wall, proposed_new_wall)
-                        current_player.total_walls -= 1
+    def make_wall(self, walls):
+        adjacent_wall = self._get_adjacent_wall(walls)
+        if adjacent_wall and not adjacent_wall.is_occupied:
+            proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
+            if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
+                self.is_occupied = True
+                self.image = self.hover_image
+                self._place_adjacent_wall(adjacent_wall)
+                self._union_walls(adjacent_wall, proposed_new_wall)
 
-    def place_wall(self):
-        self.is_occupied = True
-        self.image = self.hover_image
+                return True
+
+        return None
 
     def _get_adjacent_wall(self, walls):
         if self.horizontal:
@@ -63,7 +62,8 @@ class Wall(pygame.sprite.Sprite):
 
     @staticmethod
     def _place_adjacent_wall(adjacent_wall):
-        adjacent_wall.place_wall()
+        adjacent_wall.is_occupied = True
+        adjacent_wall.image = adjacent_wall.hover_image
 
     def _get_potential_union_rect(self, adjacent_wall):
         return pygame.Rect.union(self.rect, adjacent_wall.rect)
@@ -80,5 +80,3 @@ class Wall(pygame.sprite.Sprite):
         existing_walls = [wall for wall in walls if wall.is_occupied]
 
         return new_rect.collideobjects(existing_walls)
-
-
