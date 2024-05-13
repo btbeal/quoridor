@@ -1,6 +1,6 @@
 import pygame
 from src.constants import *
-from src.wall import Wall
+import src.wall
 
 
 def get_proximal_object(curr_position, direction, distance, desired_object_group):
@@ -20,7 +20,7 @@ def get_objects_around_node(
     proximal_objects = {}
     direction_list = [direction for direction in valid_directions if direction != exclude_direction]
     for direction in direction_list:
-        if isinstance(group.sprites()[0], Wall):
+        if isinstance(group.sprites()[0], src.wall.Wall):
             proximal_object = get_proximal_object(curr_position, direction, distance=HALF_DISTANCE, desired_object_group=group)
         else:
             proximal_object = get_proximal_object(curr_position, direction, distance=DISTANCE, desired_object_group=group)
@@ -28,6 +28,7 @@ def get_objects_around_node(
         proximal_objects[direction] = proximal_object
 
     return proximal_objects
+
 
 def get_new_position(curr_position, direction, distance):
     if direction == 'right':
