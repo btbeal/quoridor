@@ -1,11 +1,12 @@
 import pygame
 from pygame.sprite import Group
 from src.constants import *
-from src.utils import get_proximal_object, get_objects_around_node
+from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary
 
 
 class Player(pygame.sprite.Sprite):
     total_walls = 10
+    valid_directions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
 
     def __init__(self, player_number, position, color, radius):
         pygame.sprite.Sprite.__init__(self)
@@ -16,31 +17,29 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=position)
         self.position = position
 
-    def update(self, events, nodes, walls, player_turn):
+    def update(
+            self,
+            events,
+            nodes,
+            walls,
+            player_turn
+    ):
         success = False
         for event in events:
             if player_turn == self.player_number:
                 if event.type == pygame.KEYDOWN:
                     pressed_keys = pygame.key.get_pressed()
                     current_node = self._current_node(nodes)
-                    if pressed_keys[pygame.K_a] and any(pressed_keys[key] for key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]):
-                        if event.key == pygame.K_UP:
-                            success = self._move_adjacent(nodes, current_node, walls, 'up')
-                        if event.key == pygame.K_DOWN:
-                            success = self._move_adjacent(nodes, current_node, walls, 'down')
-                        if event.key == pygame.K_RIGHT:
-                            success = self._move_adjacent(nodes, current_node, walls, 'right')
-                        if event.key == pygame.K_LEFT:
-                            success = self._move_adjacent(nodes, current_node, walls, 'left')
-                    elif event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
-                        if event.key == pygame.K_UP:
-                            success = self._move(nodes, current_node, walls, 'up')
-                        if event.key == pygame.K_DOWN:
-                            success = self._move(nodes, current_node, walls, 'down')
-                        if event.key == pygame.K_RIGHT:
-                            success = self._move(nodes, current_node, walls, 'right')
-                        if event.key == pygame.K_LEFT:
-                            success = self._move(nodes, current_node, walls, 'left')
+                    key_list = [key for key in self.valid_directions if pressed_keys[key]]
+                    total_keys_pressed = sum(pressed_keys)
+
+                    if pressed_keys[pygame.K_a] and key_list and total_keys_pressed <= 2:
+                        adjacent_movement = key_list[0]
+                        success = self._move_adjacent(nodes, current_node, walls, adjacent_movement)
+
+                    elif key_list:
+                        movement = key_list[0]
+                        success = self._move(nodes, current_node, walls, movement)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     success = self._place_wall(walls)
@@ -49,9 +48,11 @@ class Player(pygame.sprite.Sprite):
 
         return success
 
-    def _move(self, nodes, current_node, walls, direction):
-        proximal_node = get_proximal_object(self.rect.center, direction, DISTANCE, nodes)
-        proximal_wall = get_proximal_object(self.rect.center, direction, HALF_DISTANCE, walls)
+    def _move(self, nodes, current_node, walls, movement):
+        node_direction = direction_dictionary[movement]['node']
+        wall_direction = direction_dictionary[movement]['wall']
+        proximal_node = get_proximal_object(self.rect.center, node_direction, nodes)
+        proximal_wall = get_proximal_object(self.rect.center, wall_direction, walls)
 
         if proximal_wall:
             if not proximal_wall.is_occupied:
@@ -62,9 +63,9 @@ class Player(pygame.sprite.Sprite):
                         current_node.is_occupied = False
                         return True
                     else:
-                        next_proximal_wall = get_proximal_object(proximal_node.rect.center, direction, HALF_DISTANCE, walls)
+                        next_proximal_wall = get_proximal_object(proximal_node.rect.center, wall_direction, walls)
                         if next_proximal_wall and not next_proximal_wall.is_occupied:
-                            next_proximal_node = get_proximal_object(proximal_node.rect.center, direction, DISTANCE, nodes)
+                            next_proximal_node = get_proximal_object(proximal_node.rect.center, node_direction, nodes)
                             self.rect.center = next_proximal_node.rect.center
                             next_proximal_node.is_occupied = True
                             current_node.is_occupied = False
@@ -72,28 +73,30 @@ class Player(pygame.sprite.Sprite):
 
         return False
 
-    def _move_adjacent(self, nodes, current_node, walls, direction):
-        # Check surrounding nodes
-        # Find the node that is occupied
-        # ensure the direction, from that node, is not occupied/blocked by any walls
-        # move that direction
-        current_node_position = self.rect.center
+    def _move_adjacent(self, nodes, current_node, walls, adjacent_movement):
+        current_node_position = current_node.rect.center
         surrounding_node_dict = get_objects_around_node(
             current_node_position,
             group=nodes,
-            exclude_direction=None,
-            valid_directions=['left', 'right', 'up', 'down']
+            valid_directions=self.valid_directions,
+            exclude_direction=None
         )
 
         occupied_nodes = [(direction, node) for direction, node in surrounding_node_dict.items() if node and node.is_occupied]
         if occupied_nodes:
             occupied_node_information = occupied_nodes[0]
-            occupied_node = occupied_node_information[1] # in two player game, only ever expect one occupied node
+            occupied_node_object = occupied_node_information[1] # in two player game, only ever expect one occupied node
             occupied_node_direction = occupied_node_information[0]
-            requested_node = get_proximal_object(occupied_node.rect.center, direction, DISTANCE, nodes)
-            wall_after_requested_node = get_proximal_object(occupied_node.rect.center, occupied_node_direction, HALF_DISTANCE, walls)
-            potential_wall_blocking_path = get_proximal_object(occupied_node.rect.center, direction, HALF_DISTANCE, walls)
-            if requested_node and wall_after_requested_node.is_occupied:
+            wall_direction = direction_dictionary[adjacent_movement]['wall']
+            node_direction = direction_dictionary[adjacent_movement]['node']
+
+            requested_node = get_proximal_object(occupied_node_object.rect.center, node_direction, nodes)
+            wall_after_requested_node_direction = tuple(t/2 for t in occupied_node_direction)
+
+            wall_after_requested_node = get_proximal_object(occupied_node_object.rect.center, wall_direction, walls)
+            potential_wall_blocking_path = get_proximal_object(occupied_node_object.rect.center, wall_direction, walls)
+            wall_after_current_node = get_proximal_object(current_node_position, wall_after_requested_node_direction, walls)
+            if requested_node and wall_after_current_node.is_occupied:
                 if potential_wall_blocking_path and not potential_wall_blocking_path.is_occupied:
                     self.rect.center = requested_node.rect.center
                     requested_node.is_occupied = True

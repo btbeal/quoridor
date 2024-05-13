@@ -2,9 +2,16 @@ import pygame
 from src.constants import *
 import src.wall
 
+direction_dictionary = {
+    pygame.K_LEFT: {'wall': (-HALF_DISTANCE, 0), 'node': (-DISTANCE, 0)},
+    pygame.K_RIGHT: {'wall': (HALF_DISTANCE, 0), 'node': (DISTANCE, 0)},
+    pygame.K_UP: {'wall': (0, -HALF_DISTANCE), 'node': (0, -DISTANCE)},
+    pygame.K_DOWN: {'wall': (0, HALF_DISTANCE), 'node': (0, DISTANCE)}
+}
 
-def get_proximal_object(curr_position, direction, distance, desired_object_group):
-    new_coordinates = get_new_position(curr_position, direction, distance)
+
+def get_proximal_object(curr_position, direction, desired_object_group):
+    new_coordinates = tuple(map(sum, zip(curr_position, direction)))
     for obj in desired_object_group:
         if obj.position == new_coordinates:
             return obj
@@ -15,15 +22,17 @@ def get_proximal_object(curr_position, direction, distance, desired_object_group
 def get_objects_around_node(
         curr_position,
         group,
-        exclude_direction=None,
-        valid_directions=['left', 'right', 'up', 'down']):
+        valid_directions,
+        exclude_direction=None):
     proximal_objects = {}
-    direction_list = [direction for direction in valid_directions if direction != exclude_direction]
+    direction_list = [direction for direction in valid_directions if direction != exclude_direction and direction != pygame.K_a]
     for direction in direction_list:
         if isinstance(group.sprites()[0], src.wall.Wall):
-            proximal_object = get_proximal_object(curr_position, direction, distance=HALF_DISTANCE, desired_object_group=group)
+            direction = direction_dictionary[direction]['wall']
+            proximal_object = get_proximal_object(curr_position, direction, desired_object_group=group)
         else:
-            proximal_object = get_proximal_object(curr_position, direction, distance=DISTANCE, desired_object_group=group)
+            direction = direction_dictionary[direction]['node']
+            proximal_object = get_proximal_object(curr_position, direction, desired_object_group=group)
 
         proximal_objects[direction] = proximal_object
 
