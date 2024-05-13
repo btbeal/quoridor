@@ -1,7 +1,7 @@
 import pygame
 from pygame.sprite import Group
 from src.constants import *
-from src.utils import get_proximal_object, get_walls_around_node
+from src.utils import get_proximal_object
 
 
 class Player(pygame.sprite.Sprite):
@@ -22,10 +22,17 @@ class Player(pygame.sprite.Sprite):
             if player_turn == self.player_number:
                 if event.type == pygame.KEYDOWN:
                     pressed_keys = pygame.key.get_pressed()
+                    current_node = self._current_node(nodes)
                     if pressed_keys[pygame.K_a] and any(pressed_keys[key] for key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]):
-                        print(True)
-                    if event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
-                        current_node = self._current_node(nodes)
+                        if event.key == pygame.K_UP:
+                            success = self._move_adjacent(nodes, walls, current_node, 'up')
+                        if event.key == pygame.K_DOWN:
+                            success = self._move_adjacent(nodes, walls, current_node, 'down')
+                        if event.key == pygame.K_RIGHT:
+                            success = self._move_adjacent(nodes, walls, current_node, 'right')
+                        if event.key == pygame.K_LEFT:
+                            success = self._move_adjacent(nodes, walls, current_node, 'left')
+                    elif event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
                         if event.key == pygame.K_UP:
                             success = self._move(nodes, walls, current_node, 'up')
                         if event.key == pygame.K_DOWN:
@@ -42,14 +49,7 @@ class Player(pygame.sprite.Sprite):
 
         return success
 
-    def _move(
-            self,
-            nodes,
-            walls,
-            current_node,
-            direction,
-            opposites={'left': 'right', 'up': 'down', 'right': 'left', 'down': 'up'}
-    ):
+    def _move(self, nodes, walls, current_node, direction):
         proximal_node = get_proximal_object(self.rect.center, direction, DISTANCE, nodes)
         proximal_wall = get_proximal_object(self.rect.center, direction, HALF_DISTANCE, walls)
 
@@ -60,44 +60,39 @@ class Player(pygame.sprite.Sprite):
                         self.rect.center = proximal_node.rect.center
                         proximal_node.is_occupied = True
                         current_node.is_occupied = False
-                        successful_move = True
+                        return True
                     else:
-                        opposite_direction = opposites.get(direction)
-                        walls_around_node = get_walls_around_node(
-                            proximal_node.rect.center, walls=walls, exclude_direction=opposite_direction
-                        )
-
-                        if walls_around_node[direction] and not walls_around_node[direction].is_occupied:
+                        next_proximal_wall = get_proximal_object(proximal_node.rect.center, direction, HALF_DISTANCE, walls)
+                        if next_proximal_wall and not next_proximal_wall.is_occupied:
                             next_proximal_node = get_proximal_object(proximal_node.rect.center, direction, DISTANCE, nodes)
                             self.rect.center = next_proximal_node.rect.center
                             next_proximal_node.is_occupied = True
                             current_node.is_occupied = False
-                            successful_move = True
-                        else:
-                            adjacent_directions = [d for d in opposites.keys() if d not in [direction, opposite_direction]]
-                            print(adjacent_directions)
-                            i = 0
-                            iterations = len(adjacent_directions) - 1
-                            wall_found = False
-                            successful_move = False
-                            while not wall_found and i <= iterations:
-                                adjacent_direction = adjacent_directions[i]
-                                print(adjacent_direction)
-                                if walls_around_node[adjacent_direction] and not walls_around_node[adjacent_direction].is_occupied:
-                                    next_proximal_node = get_proximal_object(proximal_node.rect.center, adjacent_direction, DISTANCE, nodes)
-                                    self.rect.center = next_proximal_node.rect.center
-                                    next_proximal_node.is_occupied = True
-                                    current_node.is_occupied = False
-                                    successful_move = True
-                                    wall_found = True
-                                i += 1
+                            return True
 
-            else:
-                successful_move = False
-        else:
-            successful_move = False
+        return False
 
-        return successful_move
+    def _move_adjacent(self, nodes, walls, current_node, direction):
+        # Check surrounding nodes
+        # Find the node that is occupied
+        # ensure the direction, from that node, is not occupied/blocked by any walls
+        # move that direction
+        print(isinstance(walls.sprites()[0], Wall))
+        proximal_node = get_proximal_object(self.rect.center, direction, DISTANCE, nodes)
+        proximal_wall = get_proximal_object(self.rect.center, direction, HALF_DISTANCE, walls)
+
+        if proximal_node and proximal_node.is_occupied:
+            if proximal_wall and not proximal_wall.is_occupied:
+                wall_in_adjacent_direction = get_proximal_object(proximal_node.rect.center, direction, HALF_DISTANCE, walls)
+                if wall_in_adjacent_direction and not wall_in_adjacent_direction.is_occupied:
+                    next_proximal_node = get_proximal_object(proximal_node.rect.center, direction, DISTANCE, nodes)
+                    self.rect.center = next_proximal_node.rect.center
+                    next_proximal_node.is_occupied = True
+                    current_node.is_occupied = False
+                    return True
+
+        return False
+
 
     @staticmethod
     def _place_wall(walls):
