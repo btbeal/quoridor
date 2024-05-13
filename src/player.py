@@ -21,6 +21,9 @@ class Player(pygame.sprite.Sprite):
         for event in events:
             if player_turn == self.player_number:
                 if event.type == pygame.KEYDOWN:
+                    pressed_keys = pygame.key.get_pressed()
+                    if pressed_keys[pygame.K_a] and any(pressed_keys[key] for key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]):
+                        print(True)
                     if event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
                         current_node = self._current_node(nodes)
                         if event.key == pygame.K_UP:
@@ -58,7 +61,7 @@ class Player(pygame.sprite.Sprite):
                         proximal_node.is_occupied = True
                         current_node.is_occupied = False
                         successful_move = True
-                    else: # next node is occupied and need to decide if can move to adjacent if nex prox wall occupied
+                    else:
                         opposite_direction = opposites.get(direction)
                         walls_around_node = get_walls_around_node(
                             proximal_node.rect.center, walls=walls, exclude_direction=opposite_direction
@@ -73,7 +76,7 @@ class Player(pygame.sprite.Sprite):
                         else:
                             adjacent_directions = [d for d in opposites.keys() if d not in [direction, opposite_direction]]
                             print(adjacent_directions)
-                            i=0
+                            i = 0
                             iterations = len(adjacent_directions) - 1
                             wall_found = False
                             successful_move = False
