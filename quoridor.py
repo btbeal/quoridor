@@ -35,6 +35,7 @@ class Quoridor:
                     break
 
             walls.update(events, walls)
+            nodes.update(events, walls)
 
             self.screen.fill(WHITE)
             walls.draw(self.screen)

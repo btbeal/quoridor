@@ -11,6 +11,16 @@ def get_proximal_object(curr_position, direction, distance, desired_object_group
     return None
 
 
+def get_walls_around_node(curr_position, walls, exclude_direction=None, valid_directions=['left', 'right', 'up', 'down']):
+    proximal_walls = {}
+    direction_list = [direction for direction in valid_directions if direction != exclude_direction]
+    for direction in direction_list:
+        proximal_wall = get_proximal_object(curr_position, direction, distance=HALF_DISTANCE, desired_object_group=walls)
+        proximal_walls[direction] = proximal_wall
+
+    return proximal_walls
+
+
 def get_new_position(curr_position, direction, distance):
     if direction == 'right':
         new_position = tuple(map(sum, zip(curr_position, (distance, 0))))
