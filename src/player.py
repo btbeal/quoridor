@@ -93,10 +93,9 @@ class Player(pygame.sprite.Sprite):
             requested_node = get_proximal_object(occupied_node_object.rect.center, node_direction, nodes)
             wall_after_requested_node_direction = tuple(t/2 for t in occupied_node_direction)
 
-            wall_after_requested_node = get_proximal_object(occupied_node_object.rect.center, wall_direction, walls)
+            wall_after_requested_node = get_proximal_object(occupied_node_object.rect.center, wall_after_requested_node_direction, walls)
             potential_wall_blocking_path = get_proximal_object(occupied_node_object.rect.center, wall_direction, walls)
-            wall_after_current_node = get_proximal_object(current_node_position, wall_after_requested_node_direction, walls)
-            if requested_node and wall_after_current_node.is_occupied:
+            if requested_node and wall_after_requested_node.is_occupied:
                 if potential_wall_blocking_path and not potential_wall_blocking_path.is_occupied:
                     self.rect.center = requested_node.rect.center
                     requested_node.is_occupied = True
