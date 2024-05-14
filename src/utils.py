@@ -52,6 +52,37 @@ def get_new_position(curr_position, direction, distance):
     return new_position
 
 
+def dfs(nodes, walls, player):
+    seen = {}
+    terminal_y_coord = TERMINAL_NODE_Y[player.player_number]
+    stack = [player.rect.center]
+    while len(stack) > 0:
+        vertex = stack.pop()
+        if vertex not in seen:
+            current_vertex = vertex
+            seen[current_vertex] = True
+            stack.append(current_vertex)
+            print(nodes)
+            print(walls)
+            neighbors = get_objects_around_node(current_vertex, group=nodes, valid_directions=direction_dictionary.keys())
+            walls_between_neighbors = get_objects_around_node(current_vertex, group=walls, valid_directions=direction_dictionary.keys())
+            valid_neighbors = []
+            for direction, wall in walls_between_neighbors.items():
+                if wall and not wall.is_occupied:
+                    # multiply direction by 2 to get node direction from wall direction tuple
+                    valid_direction = tuple(2*d for d in direction)
+                    valid_neighbors.append(neighbors[valid_direction])
+
+            for neighboring_node in valid_neighbors:
+                if neighboring_node.position not in seen:
+                    if neighboring_node.position[1] == terminal_y_coord:
+                        return True
+                    else:
+                        stack.append(neighboring_node.position)
+
+    return False
+
+
 def display_player_walls(player_group, screen, cur_play, font_size=32):
     my_font = pygame.font.SysFont(None, font_size)
     coordinates = {

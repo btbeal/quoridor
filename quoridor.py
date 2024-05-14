@@ -29,7 +29,7 @@ class Quoridor:
                     quit()
 
             for player in players:
-                success = player.update(events, nodes, walls, self.current_player)
+                success = player.update(events, nodes, walls, players, self.current_player)
                 if success:
                     self.current_player = 3 - self.current_player
                     break

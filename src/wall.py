@@ -1,6 +1,6 @@
 import pygame
 from src.constants import DISTANCE, SMALL_CELL
-from src.utils import get_new_position
+from src.utils import get_new_position, dfs
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
@@ -34,11 +34,23 @@ class Wall(pygame.sprite.Sprite):
         if not self.is_occupied:
             self.image = self.hover_image if hit else self.original_image
 
-    def make_wall(self, walls):
+    def make_wall(self, walls, nodes, players):
         adjacent_wall = self._get_adjacent_wall(walls)
         if adjacent_wall and not adjacent_wall.is_occupied:
             proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
             if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
+                curr_walls_with_proposed_new_wall = [proposed_new_wall] + [wall for wall in walls]
+
+                for player in players:
+                    viable_path_remains = dfs(
+                        nodes=nodes,
+                        walls=curr_walls_with_proposed_new_wall,
+                        player=player
+                    )
+
+                    if not viable_path_remains:
+                        return False
+
                 self.is_occupied = True
                 self.image = self.hover_image
                 self._place_adjacent_wall(adjacent_wall)

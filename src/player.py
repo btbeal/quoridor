@@ -1,7 +1,7 @@
 import pygame
 from pygame.sprite import Group
 from src.constants import *
-from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary
+from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary, dfs
 
 
 class Player(pygame.sprite.Sprite):
@@ -22,6 +22,7 @@ class Player(pygame.sprite.Sprite):
             events,
             nodes,
             walls,
+            players,
             player_turn
     ):
         success = False
@@ -42,7 +43,7 @@ class Player(pygame.sprite.Sprite):
                         success = self._move(nodes, current_node, walls, movement)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    success = self._place_wall(walls)
+                    success = self._place_wall(walls, nodes, players)
                     if success:
                         self.total_walls -= 1
 
@@ -105,12 +106,12 @@ class Player(pygame.sprite.Sprite):
         return False
 
     @staticmethod
-    def _place_wall(walls):
+    def _place_wall(walls, nodes, players):
         pos = pygame.mouse.get_pos()
         successful_build = False
         for wall in walls:
             if wall.rect.collidepoint(pos):
-                successful_build = wall.make_wall(walls)
+                return wall.make_wall(walls, nodes, players)
 
         return successful_build
 
