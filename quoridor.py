@@ -1,5 +1,5 @@
 from src.assemble_board import assemble_board_component_groups
-from src.constants import SCREEN_SIZE_X, SCREEN_SIZE_Y, GAME_SIZE
+from src.constants import SCREEN_SIZE_X, SCREEN_SIZE_Y
 from src.player import assemble_player_group
 from src.utils import display_player_walls
 from src.game_display import *
