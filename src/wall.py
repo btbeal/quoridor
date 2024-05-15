@@ -39,16 +39,19 @@ class Wall(pygame.sprite.Sprite):
         if adjacent_wall and not adjacent_wall.is_occupied:
             proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
             if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
-                curr_walls_with_proposed_new_wall = [proposed_new_wall] + [wall for wall in walls]
+                adjacent_wall.is_occupied = True
+                self.is_occupied = True
 
                 for player in players:
                     viable_path_remains = dfs(
                         nodes=nodes,
-                        walls=curr_walls_with_proposed_new_wall,
+                        walls=walls,
                         player=player
                     )
 
                     if not viable_path_remains:
+                        adjacent_wall.is_occupied = False
+                        self.is_occupied = False
                         return False
 
                 self.is_occupied = True

@@ -62,8 +62,6 @@ def dfs(nodes, walls, player):
             current_vertex = vertex
             seen[current_vertex] = True
             stack.append(current_vertex)
-            print(nodes)
-            print(walls)
             neighbors = get_objects_around_node(current_vertex, group=nodes, valid_directions=direction_dictionary.keys())
             walls_between_neighbors = get_objects_around_node(current_vertex, group=walls, valid_directions=direction_dictionary.keys())
             valid_neighbors = []
