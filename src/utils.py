@@ -52,7 +52,7 @@ def get_new_position(curr_position, direction, distance):
     return new_position
 
 
-def dfs(nodes, walls, player):
+def check_viable_path(nodes, walls, player):
     seen = {}
     terminal_y_coord = TERMINAL_NODE_Y[player.player_number]
     stack = [player.rect.center]

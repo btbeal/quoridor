@@ -1,6 +1,6 @@
 import pygame
 from src.constants import DISTANCE, SMALL_CELL
-from src.utils import get_new_position, dfs
+from src.utils import get_new_position, check_viable_path
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
@@ -43,7 +43,7 @@ class Wall(pygame.sprite.Sprite):
                 self.is_occupied = True
 
                 for player in players:
-                    viable_path_remains = dfs(
+                    viable_path_remains = check_viable_path(
                         nodes=nodes,
                         walls=walls,
                         player=player
