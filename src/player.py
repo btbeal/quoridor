@@ -1,7 +1,7 @@
 import pygame
 from pygame.sprite import Group
 from src.constants import *
-from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary, dfs
+from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary
 
 
 class Player(pygame.sprite.Sprite):
