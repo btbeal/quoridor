@@ -1,9 +1,9 @@
 from src.assemble_board import assemble_board_component_groups
 from src.utils import display_player_walls
-from src.game_display import *
 from src.player import Player
 from pygame.sprite import Group
 from src.constants import *
+import pygame
 
 
 class Quoridor:
@@ -54,7 +54,7 @@ class Quoridor:
                     self.walls.draw(self.screen)
                     self.nodes.draw(self.screen)
                     self.player_group.draw(self.screen)
-                    display_player_walls(player_group=self.player_group, screen=self.screen, cur_play=current_player_index)
+                    display_player_walls(player_group=self.player_group, screen=self.screen, cur_play=current_player)
                     pygame.display.flip()
 
 
