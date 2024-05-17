@@ -43,7 +43,7 @@ class Player(pygame.sprite.Sprite):
                         success = self._move(nodes, current_node, walls, movement)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    success = self._place_wall(walls, nodes, players)
+                    success = Player._place_wall(walls, nodes, players)
                     if success:
                         self.total_walls -= 1
 

@@ -34,8 +34,7 @@ class Quoridor:
                     self.current_player = 3 - self.current_player
                     break
 
-            walls.update(events, walls)
-            nodes.update(events, walls)
+            walls.update()
 
             self.screen.fill(WHITE)
             walls.draw(self.screen)
