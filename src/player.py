@@ -1,6 +1,4 @@
 import pygame
-from pygame.sprite import Group
-from src.constants import *
 from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary
 
 
@@ -8,7 +6,7 @@ class Player(pygame.sprite.Sprite):
     total_walls = 10
     valid_directions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
 
-    def __init__(self, player_number, position, color, radius):
+    def __init__(self, player_number, position, color, radius, is_ai=False):
         pygame.sprite.Sprite.__init__(self)
         self.radius = radius
         self.player_number = player_number
@@ -16,38 +14,40 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, color, (radius, radius), radius)
         self.rect = self.image.get_rect(center=position)
         self.position = position
+        self.is_ai = is_ai
 
     def update(
             self,
-            events,
+            event,
             nodes,
             walls,
-            players,
-            player_turn
-    ):
-        success = False
-        for event in events:
-            if player_turn == self.player_number:
-                if event.type == pygame.KEYDOWN:
-                    pressed_keys = pygame.key.get_pressed()
-                    current_node = self._current_node(nodes)
-                    key_list = [key for key in self.valid_directions if pressed_keys[key]]
-                    total_keys_pressed = sum(pressed_keys)
+            players
+    ) -> bool:
+        """
+        Returns whether the given event is a valid move and updates the state of the board
+        if so.
+        """
+        if event.type == pygame.KEYDOWN:
+            pressed_keys = pygame.key.get_pressed()
+            current_node = self._current_node(nodes)
+            key_list = [key for key in self.valid_directions if pressed_keys[key]]
+            total_keys_pressed = sum(pressed_keys)
 
-                    if pressed_keys[pygame.K_a] and key_list and total_keys_pressed <= 2:
-                        adjacent_movement = key_list[0]
-                        success = self._move_adjacent(nodes, current_node, walls, adjacent_movement)
+            if pressed_keys[pygame.K_a] and key_list and total_keys_pressed <= 2:
+                adjacent_movement = key_list[0]
+                return self._move_adjacent(nodes, current_node, walls, adjacent_movement)
 
-                    elif key_list:
-                        movement = key_list[0]
-                        success = self._move(nodes, current_node, walls, movement)
+            if key_list:
+                movement = key_list[0]
+                return self._move(nodes, current_node, walls, movement)
 
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    success = Player._place_wall(walls, nodes, players)
-                    if success:
-                        self.total_walls -= 1
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            success = Player._place_wall(walls, nodes, players)
+            if success:
+                self.total_walls -= 1
+                return True
 
-        return success
+        return False
 
     def _move(self, nodes, current_node, walls, movement):
         node_direction = direction_dictionary[movement]['node']
@@ -122,12 +122,4 @@ class Player(pygame.sprite.Sprite):
 
         return None
 
-
-def assemble_player_group():
-    player_group = Group()
-    player_one = Player(player_number=1, color=pygame.Color("coral"), position=(GAME_SIZE*0.5, HALF_DISTANCE), radius=0.5*CELL)
-    player_two = Player(player_number=2, color=pygame.Color("blue"), position=(GAME_SIZE*0.5, GAME_SIZE - HALF_DISTANCE), radius=0.5*CELL)
-    player_group.add([player_one, player_two])
-
-    return player_group
 
