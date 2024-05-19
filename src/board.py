@@ -44,11 +44,13 @@ class Board:
     def get_adjacent_wall(self, wall: Wall):
         if wall.is_vertical:
             coordinate_to_search = self._get_new_position(
-                curr_position=wall.position, direction="down", distance=DISTANCE
+                curr_position=wall.position, direction=Direction.DOWN, distance=DISTANCE
             )
         else:
             coordinate_to_search = self._get_new_position(
-                curr_position=wall.position, direction="right", distance=DISTANCE
+                curr_position=wall.position,
+                direction=Direction.RIGHT,
+                distance=DISTANCE,
             )
         for wall in self.walls:
             if wall.position == coordinate_to_search:
@@ -57,13 +59,13 @@ class Board:
         return None
 
     def _get_new_position(self, curr_position, direction, distance):
-        if direction == "right":
+        if direction == Direction.RIGHT:
             new_position = tuple(map(sum, zip(curr_position, (distance, 0))))
-        elif direction == "left":
+        elif direction == Direction.LEFT:
             new_position = tuple(map(sum, zip(curr_position, (-distance, 0))))
-        elif direction == "up":
+        elif direction == Direction.UP:
             new_position = tuple(map(sum, zip(curr_position, (0, -distance))))
-        elif direction == "down":
+        elif direction == Direction.DOWN:
             new_position = tuple(map(sum, zip(curr_position, (0, distance))))
 
         return new_position
