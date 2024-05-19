@@ -52,13 +52,18 @@ class Wall(pygame.sprite.Sprite):
         self.rect = new_rect
 
     @staticmethod
-    def get_coordinates_in_direction(direction: int) -> Tuple[int, int]:
+    def get_coordinates_in_direction(direction: int, use_normalized: bool = False) -> Tuple[int, int]:
+        if use_normalized:
+            distance = HALF_DISTANCE/HALF_DISTANCE
+        else:
+            distance = HALF_DISTANCE
+
         if direction == pygame.K_LEFT:
-            return (-HALF_DISTANCE, 0)
+            return (-distance, 0)
         if direction == pygame.K_RIGHT:
-            return (HALF_DISTANCE, 0)
+            return (distance, 0)
         if direction == pygame.K_UP:
-            return (0, -HALF_DISTANCE)
+            return (0, -distance)
         if direction == pygame.K_DOWN:
-            return (0, HALF_DISTANCE)
+            return (0, distance)
         raise RuntimeError(f"Wall direction {direction} not recognized")

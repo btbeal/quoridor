@@ -1,17 +1,23 @@
+import numpy as np
+
 import pygame
 from pygame.sprite import Group
 
+from src.node import Node
+from src.wall import Wall
 from src.player import Player
 from src.board import Board
 from src.constants import (
     SCREEN_SIZE_X,
     SCREEN_SIZE_Y,
+    SPACES,
     GAME_SIZE,
     CELL,
     HALF_DISTANCE,
     WHITE,
     TERMINAL_NODE_Y,
     SEMI_BLACK,
+    Direction,
 )
 
 
@@ -58,6 +64,7 @@ class Quoridor:
             current_player = self.players[current_player_index]
             if current_player.is_ai:
                 state = self.board.get_state()
+                legal_moves = self._get_legal_moves()
                 raise RuntimeError("AI unimplemented")
                 # TODO: implement
                 # while True:
@@ -73,6 +80,10 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
+                        print(self.board.get_state().transpose())
+                        print(self._get_eligible_node_centers(
+                                self.board.get_state(), current_player_index=current_player_index
+                        ))
                     self._render(current_player)
             current_player_index = (current_player_index + 1) % len(self.players)
 
@@ -130,5 +141,86 @@ class Quoridor:
                     pygame.quit()
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = True
+
+    def _get_eligible_moves(self, state, current_player_index):
+        eligible_wall_center_coords = self._get_eligible_wall_centers(state)
+        eligible_node_center_coords = self._get_eligible_node_centers(state, current_player_index)
+
+        return eligible_wall_center_coords, eligible_node_center_coords
+
+    def _get_legal_moves(self, eligible_moves):
+        pass
+
+    @staticmethod
+    def _get_eligible_wall_centers(state):
+        rows, cols = state.shape
+        eligible_coords = set()
+
+        for i in range(rows):
+            j = 1
+            while j <= cols - 3:
+                if state[i, j] == 2 and state[i, j + 1] == 2 and state[i, j + 2] == 2:
+                    eligible_coords.add((i, j + 1))  # Add the center coordinate
+                j += 1
+
+        for j in range(cols):
+            i = 1
+            while i <= rows - 3:
+                if state[i, j] == 2 and state[i + 1, j] == 2 and state[i + 2, j] == 2:
+                    eligible_coords.add((i + 1, j))  # Add the center coordinate
+                i += 1
+
+        return eligible_coords
+
+    def _get_eligible_node_centers(self, state, current_player_index, max_dim=SPACES):
+        for player in self.players:
+            if player.index != current_player_index:
+                x_opponent, y_opponent = np.argwhere(state == player.matrix_representation)[0]
+            else:
+                x, y = np.argwhere(state == player.matrix_representation)[0]
+
+        current_coords = tuple((x, y))
+        eligible_coords = set()
+        occupied_walls_around_current_node_dict = self.board.get_walls_around_node(
+            normalized_node_coordinates=current_coords,
+            state=state
+        )
+        for direction in Direction:
+            node_direction_to_add = Node.get_coordinates_in_direction(direction=direction, use_normalized=True)
+            new_node_coords = Board.add_coordinates(current_coords, node_direction_to_add)
+            x_bool = (0 <= new_node_coords[0] < max_dim)
+            y_bool = (0 <= new_node_coords[1] < max_dim)
+            coords_are_opponents = new_node_coords == (x_opponent, y_opponent)
+            if not occupied_walls_around_current_node_dict.get(direction):
+                if x_bool and y_bool and not coords_are_opponents:
+                    eligible_coords.add(new_node_coords)
+                elif coords_are_opponents:
+                    occupied_walls_around_opponent_node_dict = self.board.get_walls_around_node(
+                        normalized_node_coordinates=new_node_coords,
+                        state=state
+                    )
+
+                    nodes_around_opponent_node_dict = self.board.get_nodes_around_node(
+                        normalized_node_coordinates=new_node_coords,
+                        state=state
+                    )
+
+                    if not occupied_walls_around_opponent_node_dict.get(direction) and nodes_around_opponent_node_dict.get(direction):
+                        eligible_coords.add(nodes_around_opponent_node_dict[direction])
+                    elif occupied_walls_around_opponent_node_dict.get(direction): # wall behind opponent node
+                        if direction in [Direction.UP, Direction.DOWN]:
+                            for direct in [Direction.LEFT, Direction.RIGHT]:
+                                if not occupied_walls_around_opponent_node_dict.get(direct) and nodes_around_opponent_node_dict.get(direct):
+                                    eligible_coords.add(nodes_around_opponent_node_dict[direct])
+                        else:
+                            for direct in [Direction.UP, Direction.DOWN]:
+                                if not occupied_walls_around_opponent_node_dict.get(direct) and nodes_around_opponent_node_dict.get(direct):
+                                    eligible_coords.add(nodes_around_opponent_node_dict[direct])
+
+        return eligible_coords
+
+
+
+
 
 

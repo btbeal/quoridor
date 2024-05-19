@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pygame
 
-from src.constants import DISTANCE
+from src.constants import DISTANCE, HALF_DISTANCE
 
 
 class Node(pygame.sprite.Sprite):
@@ -22,13 +22,18 @@ class Node(pygame.sprite.Sprite):
         return img
 
     @staticmethod
-    def get_coordinates_in_direction(direction: int) -> Tuple[int, int]:
+    def get_coordinates_in_direction(direction: int, use_normalized: bool = False) -> Tuple[int, int]:
+        if use_normalized:
+            distance = DISTANCE/HALF_DISTANCE
+        else:
+            distance = DISTANCE
+
         if direction == pygame.K_LEFT:
-            return (-DISTANCE, 0)
+            return (-distance, 0)
         if direction == pygame.K_RIGHT:
-            return (DISTANCE, 0)
+            return (distance, 0)
         if direction == pygame.K_UP:
-            return (0, -DISTANCE)
+            return (0, - distance)
         if direction == pygame.K_DOWN:
-            return (0, DISTANCE)
+            return (0, distance)
         raise RuntimeError(f"Node direction {direction} not recognized")
