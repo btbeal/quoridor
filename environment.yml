@@ -4,12 +4,15 @@ channels:
   - defaults
 dependencies:
   - aom=3.9.0=h537b5a7_0
+  - black=24.3.0=py39hca03da5_0
   - blas=1.0=openblas
   - bzip2=1.0.8=h80987f9_6
   - ca-certificates=2024.3.11=hca03da5_0
   - cairo=1.18.0=hd1e100b_0
+  - click=8.1.7=py39hca03da5_0
   - dav1d=1.2.1=h80987f9_0
   - expat=2.6.2=h313beb8_0
+  - flake8=7.0.0=py39hca03da5_0
   - fluidsynth=2.3.5=h9a29e92_0
   - font-ttf-dejavu-sans-mono=2.37=hd3eb1b0_0
   - font-ttf-inconsolata=2.001=hcb22688_0
@@ -55,17 +58,24 @@ dependencies:
   - libzlib=1.2.13=h53f4e23_5
   - llvm-openmp=14.0.6=hc6e5704_0
   - lz4-c=1.9.4=h313beb8_1
+  - mccabe=0.7.0=pyhd3eb1b0_0
   - mpg123=1.32.6=hebf3989_0
+  - mypy_extensions=1.0.0=py39hca03da5_0
   - ncurses=6.4=h313beb8_0
   - numpy=1.26.4=py39h3b2db8e_0
   - numpy-base=1.26.4=py39ha9811e2_0
   - openssl=3.0.13=h1a28f6b_1
   - opusfile=0.12=h5643135_2
+  - packaging=23.2=py39hca03da5_0
+  - pathspec=0.10.3=py39hca03da5_0
   - pcre2=10.43=h26f9a81_0
   - pip=24.0=py39hca03da5_0
   - pixman=0.43.4=hebf3989_0
+  - platformdirs=3.10.0=py39hca03da5_0
   - portaudio=19.6.0=h13dd4ca_9
   - portmidi=2.0.4=h13dd4ca_2
+  - pycodestyle=2.11.1=py39hca03da5_0
+  - pyflakes=3.2.0=py39hca03da5_0
   - pygame=2.5.2=py39ha1ca32f_2
   - python=3.9.16=hea58f1e_0_cpython
   - python_abi=3.9=4_cp39
@@ -79,6 +89,8 @@ dependencies:
   - sqlite=3.45.3=h80987f9_0
   - svt-av1=2.0.0=h078ce10_0
   - tk=8.6.14=h6ba3021_0
+  - tomli=2.0.1=py39hca03da5_0
+  - typing_extensions=4.11.0=py39hca03da5_0
   - tzdata=2024a=h04d1e81_0
   - wheel=0.43.0=py39hca03da5_0
   - xz=5.4.6=h80987f9_1

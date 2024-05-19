@@ -1,8 +1,16 @@
-from src.player import Player
-from src.board import Board
-from src.constants import *
 import pygame
 from pygame.sprite import Group
+
+from src.player import Player
+from src.board import Board
+from src.constants import (
+    SCREEN_SIZE_X,
+    SCREEN_SIZE_Y,
+    GAME_SIZE,
+    CELL,
+    HALF_DISTANCE,
+    WHITE,
+)
 
 
 DEFAULT_FONT_SIZE = 32
@@ -26,8 +34,20 @@ class Quoridor:
     @staticmethod
     def default_players():
         return [
-            Player(index=0, name="Orange", color=pygame.Color("coral"), position=(GAME_SIZE*0.5, HALF_DISTANCE), radius=0.5*CELL),
-            Player(index=1, name="Blue", color=pygame.Color("blue"), position=(GAME_SIZE*0.5, GAME_SIZE - HALF_DISTANCE), radius=0.5*CELL),
+            Player(
+                index=0,
+                name="Orange",
+                color=pygame.Color("coral"),
+                position=(GAME_SIZE * 0.5, HALF_DISTANCE),
+                radius=0.5 * CELL,
+            ),
+            Player(
+                index=1,
+                name="Blue",
+                color=pygame.Color("blue"),
+                position=(GAME_SIZE * 0.5, GAME_SIZE - HALF_DISTANCE),
+                radius=0.5 * CELL,
+            ),
         ]
 
     def play_game(self):
@@ -51,9 +71,7 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
-                    self._render(current_player)                     
-                   
-            current_player_index = (current_player_index + 1) % len(self.players)
+                    self._render(current_player)
 
     def _render(self, current_player: Player):
         self.screen.fill(WHITE)
@@ -66,18 +84,19 @@ class Quoridor:
 
     def _render_metadata(self, current_player: Player):
         self.screen.blit(
-            self.font.render(f"Current player: {current_player.name}", False, (0, 0, 0)), 
-            (GAME_SIZE, 0)
+            self.font.render(
+                f"Current player: {current_player.name}", False, (0, 0, 0)
+            ),
+            (GAME_SIZE, 0),
         )
         for i, player in enumerate(self.players):
             row = self.font_size * (i + 1) * 2
             self.screen.blit(
-                self.font.render(f"{player.name}", False, (0, 0, 0)),
-                (GAME_SIZE, row)
+                self.font.render(f"{player.name}", False, (0, 0, 0)), (GAME_SIZE, row)
             )
             self.screen.blit(
-                self.font.render(f"Total walls: {player.total_walls}", False, (0, 0, 0)), 
-                (GAME_SIZE + 20, row + self.font_size)
+                self.font.render(
+                    f"Total walls: {player.total_walls}", False, (0, 0, 0)
+                ),
+                (GAME_SIZE + 20, row + self.font_size),
             )
-
-

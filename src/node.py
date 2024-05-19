@@ -1,11 +1,12 @@
 from typing import Tuple
+
 import pygame
 
-from src.constants import *
+from src.constants import DISTANCE
 
 
 class Node(pygame.sprite.Sprite):
-    def __init__(self, color=pygame.Color('gray86'), position=(0, 0), w=50):
+    def __init__(self, color=pygame.Color("gray86"), position=(0, 0), w=50):
         pygame.sprite.Sprite.__init__(self)
         self.original_image = self._create_image(color, w=w, h=w)
         self.image = self.original_image
@@ -19,7 +20,7 @@ class Node(pygame.sprite.Sprite):
         img = pygame.Surface([w, h])
         img.fill(color)
         return img
-    
+
     @staticmethod
     def get_coordinates_in_direction(direction: int) -> Tuple[int, int]:
         if direction == pygame.K_LEFT:

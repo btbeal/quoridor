@@ -20,7 +20,6 @@ class Player(pygame.sprite.Sprite):
         self.position = position
         self.is_ai = is_ai
 
-
     def update(
         self,
         event,
@@ -47,18 +46,19 @@ class Player(pygame.sprite.Sprite):
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
-            walls_to_place = [wall for wall in board.walls if wall.rect.collidepoint(pos)]
+            walls_to_place = [
+                wall for wall in board.walls if wall.rect.collidepoint(pos)
+            ]
             num_walls_to_place = len(walls_to_place)
             if not num_walls_to_place:
                 return False
-            
+
             success = Player._place_wall(walls_to_place[0], board, players)
             if success:
                 self.total_walls -= 1
                 return True
 
         return False
-
 
     def _move(self, nodes, current_node, walls, movement):
         node_direction = Node.get_coordinates_in_direction(movement)
@@ -69,16 +69,20 @@ class Player(pygame.sprite.Sprite):
 
         if not proximal_wall or proximal_wall.is_occupied or not proximal_node:
             return False
-    
+
         if not proximal_node.is_occupied:
             self.rect.center = proximal_node.rect.center
             proximal_node.is_occupied = True
             current_node.is_occupied = False
             return True
 
-        next_proximal_wall = get_proximal_object(proximal_node.rect.center, wall_direction, walls)
+        next_proximal_wall = get_proximal_object(
+            proximal_node.rect.center, wall_direction, walls
+        )
         if next_proximal_wall and not next_proximal_wall.is_occupied:
-            next_proximal_node = get_proximal_object(proximal_node.rect.center, node_direction, nodes)
+            next_proximal_node = get_proximal_object(
+                proximal_node.rect.center, node_direction, nodes
+            )
             self.rect.center = next_proximal_node.rect.center
             next_proximal_node.is_occupied = True
             current_node.is_occupied = False
@@ -86,37 +90,53 @@ class Player(pygame.sprite.Sprite):
 
         return False
 
-
     def _move_adjacent(self, board: Board, current_node, adjacent_movement):
         current_node_position = current_node.rect.center
         surrounding_node_dict = board.get_objects_around_node(
-            current_node_position,
-            group=board.nodes,
-            exclude_direction=None
+            current_node_position, group=board.nodes, exclude_direction=None
         )
 
-        occupied_nodes = [(direction, node) for direction, node in surrounding_node_dict.items() if node and node.is_occupied]
+        occupied_nodes = [
+            (direction, node)
+            for direction, node in surrounding_node_dict.items()
+            if node and node.is_occupied
+        ]
         if occupied_nodes:
             occupied_node_information = occupied_nodes[0]
-            occupied_node_object = occupied_node_information[1] # in two player game, only ever expect one occupied node
+            occupied_node_object = occupied_node_information[
+                1
+            ]  # in two player game, only ever expect one occupied node
             occupied_node_direction = occupied_node_information[0]
             wall_direction = Wall.get_coordinates_in_direction(adjacent_movement)
             node_direction = Node.get_coordinates_in_direction(adjacent_movement)
 
-            requested_node = get_proximal_object(occupied_node_object.rect.center, node_direction, board.nodes)
-            wall_after_requested_node_direction = tuple(t/2 for t in occupied_node_direction)
+            requested_node = get_proximal_object(
+                occupied_node_object.rect.center, node_direction, board.nodes
+            )
+            wall_after_requested_node_direction = tuple(
+                t / 2 for t in occupied_node_direction
+            )
 
-            wall_after_requested_node = get_proximal_object(occupied_node_object.rect.center, wall_after_requested_node_direction, board.walls)
-            potential_wall_blocking_path = get_proximal_object(occupied_node_object.rect.center, wall_direction, board.walls)
-            if requested_node and wall_after_requested_node.is_occupied:
-                if potential_wall_blocking_path and not potential_wall_blocking_path.is_occupied:
-                    self.rect.center = requested_node.rect.center
-                    requested_node.is_occupied = True
-                    current_node.is_occupied = False
-                    return True
+            wall_after_requested_node = get_proximal_object(
+                occupied_node_object.rect.center,
+                wall_after_requested_node_direction,
+                board.walls,
+            )
+            potential_wall_blocking_path = get_proximal_object(
+                occupied_node_object.rect.center, wall_direction, board.walls
+            )
+            if (
+                requested_node
+                and wall_after_requested_node.is_occupied
+                and potential_wall_blocking_path
+                and not potential_wall_blocking_path.is_occupied
+            ):
+                self.rect.center = requested_node.rect.center
+                requested_node.is_occupied = True
+                current_node.is_occupied = False
+                return True
 
         return False
-
 
     def _current_node(self, nodes):
         for node in nodes:
@@ -124,7 +144,6 @@ class Player(pygame.sprite.Sprite):
                 return node
 
         return None
-    
 
     @staticmethod
     def _place_wall(wall: Wall, board: Board, players):
@@ -137,8 +156,7 @@ class Player(pygame.sprite.Sprite):
 
                 for player in players:
                     viable_path_remains = board.check_viable_path(
-                        player.index,
-                        player.rect.center
+                        player.index, player.rect.center
                     )
 
                     if not viable_path_remains:
@@ -153,5 +171,3 @@ class Player(pygame.sprite.Sprite):
                 return True
 
         return False
-
-

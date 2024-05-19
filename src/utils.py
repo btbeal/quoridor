@@ -1,6 +1,3 @@
-from src.constants import *
-
-
 def get_proximal_object(curr_position, direction, desired_object_group):
     new_coordinates = tuple(map(sum, zip(curr_position, direction)))
     for obj in desired_object_group:
@@ -8,5 +5,3 @@ def get_proximal_object(curr_position, direction, desired_object_group):
             return obj
 
     return None
-
-
