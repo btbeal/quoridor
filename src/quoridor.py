@@ -71,7 +71,6 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
-                        print(self.board.get_state())
                     self._render(current_player)
 
     def _render(self, current_player: Player):
