@@ -11,11 +11,12 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self, index, name, position, color, radius, is_ai=False):
         pygame.sprite.Sprite.__init__(self)
+        self.color = color
         self.index = index
         self.name = name
         self.radius = radius
         self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, color, (radius, radius), radius)
+        pygame.draw.circle(self.image, self.color, (radius, radius), radius)
         self.rect = self.image.get_rect(center=position)
         self.position = position
         self.is_ai = is_ai
