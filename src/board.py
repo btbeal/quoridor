@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-import np
+import numpy as np
 import pygame
 from pygame.sprite import Group
 from pygame.rect import Rect
@@ -133,12 +133,12 @@ class Board:
                 x_coord = normalized_coordinates[0]
                 y_coord = normalized_coordinates[1]
                 if wall.is_vertical:
-                    game_state[x_coord + 1, y_coord] = 1
-                    game_state[x_coord - 1, y_coord] = 1
-                    game_state[normalized_coordinates] = 1
-                else:
                     game_state[x_coord, y_coord + 1] = 1
                     game_state[x_coord, y_coord - 1] = 1
+                    game_state[normalized_coordinates] = 1
+                else:
+                    game_state[x_coord + 1, y_coord] = 1
+                    game_state[x_coord - 1, y_coord] = 1
                     game_state[normalized_coordinates] = 1
 
         for player in self.players:
