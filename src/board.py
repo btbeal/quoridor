@@ -140,6 +140,8 @@ class Board:
                     game_state[x_coord + 1, y_coord] = 1
                     game_state[x_coord - 1, y_coord] = 1
                     game_state[normalized_coordinates] = 1
+            else:
+                game_state[normalized_coordinates] = 2
 
         for player in self.players:
             normalized_coordinates = self._normalize_coordinates(player.rect.center)
