@@ -21,9 +21,9 @@ class Board():
     2. Walls
     """
 
-    def __init__(self):
+    def __init__(self, players):
         self.nodes, self.walls = self._construct_board()
-
+        self.players = players
 
     def _construct_board(self) -> Tuple[list[Node], list[Wall]]:
         nodes = Group()
@@ -113,3 +113,25 @@ class Board():
                             stack.append(neighboring_node.position)
 
         return False
+
+    def get_state(self):
+        game_state = np.zeros((SPACES, SPACES))
+
+        for wall in self.walls:
+            normalized_coordinates = self._normalize_coordinates(wall.rect.center)
+            if wall.is_occupied:
+                game_state[normalized_coordinates] = 1
+            else:
+                game_state[normalized_coordinates] = 2
+
+        for player in self.players:
+            normalized_coordinates = self._normalize_coordinates(player.rect.center)
+            game_state[normalized_coordinates] = (player.index + 1) * 10
+
+        return game_state
+
+    @staticmethod
+    def _normalize_coordinates(coords, distance=HALF_DISTANCE):
+        return tuple(int(coord/distance) - 1 for coord in coords)
+
+

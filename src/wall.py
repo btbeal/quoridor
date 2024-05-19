@@ -32,23 +32,14 @@ class Wall(pygame.sprite.Sprite):
 
         return img
 
-
     def update(self):
         pos = pygame.mouse.get_pos()
         hit = self.rect.collidepoint(pos)
         if not self.is_occupied:
             self.image = self.hover_image if hit else self.original_image
 
-
-    @staticmethod
-    def _place_adjacent_wall(adjacent_wall):
-        adjacent_wall.is_occupied = True
-        adjacent_wall.image = adjacent_wall.hover_image
-
-
     def _get_potential_union_rect(self, adjacent_wall):
         return pygame.Rect.union(self.rect, adjacent_wall.rect)
-
 
     def _union_walls(self, adjacent_wall, new_rect):
         if self.is_vertical:
@@ -56,7 +47,6 @@ class Wall(pygame.sprite.Sprite):
         else:
             self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
         self.rect = new_rect
-
 
     @staticmethod
     def get_coordinates_in_direction(direction: int) -> Tuple[int, int]:

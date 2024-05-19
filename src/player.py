@@ -49,7 +49,7 @@ class Player(pygame.sprite.Sprite):
             pos = pygame.mouse.get_pos()
             walls_to_place = [wall for wall in board.walls if wall.rect.collidepoint(pos)]
             num_walls_to_place = len(walls_to_place)
-            if not num_walls_to_place or num_walls_to_place > 1:
+            if not num_walls_to_place:
                 return False
             
             success = Player._place_wall(walls_to_place[0], board, players)
@@ -146,10 +146,9 @@ class Player(pygame.sprite.Sprite):
                         wall.is_occupied = False
                         return False
 
-                wall.is_occupied = True
                 wall.image = wall.hover_image
-                wall._place_adjacent_wall(adjacent_wall)
                 wall._union_walls(adjacent_wall, proposed_new_wall)
+                adjacent_wall.kill()
 
                 return True
 
