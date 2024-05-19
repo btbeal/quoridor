@@ -72,6 +72,7 @@ class Quoridor:
                             quit()
                         success = current_player.update(event, self.board, self.players)
                     self._render(current_player)
+            current_player_index = (current_player_index + 1) % len(self.players)
 
     def _render(self, current_player: Player):
         self.screen.fill(WHITE)

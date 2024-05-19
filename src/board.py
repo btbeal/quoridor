@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-import np
+import numpy as np
 import pygame
 from pygame.sprite import Group
 from pygame.rect import Rect
