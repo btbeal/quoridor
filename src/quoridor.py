@@ -4,7 +4,6 @@ import pygame
 from pygame.sprite import Group
 
 from src.node import Node
-from src.wall import Wall
 from src.player import Player
 from src.board import Board
 from src.constants import (
@@ -63,14 +62,23 @@ class Quoridor:
         while True:
             current_player = self.players[current_player_index]
             if current_player.is_ai:
-                state = self.board.get_state()
-                legal_moves = self._get_legal_moves()
-                raise RuntimeError("AI unimplemented")
-                # TODO: implement
-                # while True:
-                #     event = player.get_event(self.nodes, self.walls, players)
-                #     if player.update(event, self.nodes, self.walls, players):
-                #         break
+                success = False
+                while not success:
+                    state = self.board.get_state()
+                    legal_move_dict = self._get_legal_moves(state=state, current_player_index=current_player_index)
+                    random_move_type = np.random.choice(list(legal_move_dict.keys()))
+                    potential_coordinates_for_move = legal_move_dict[random_move_type]
+                    length_of_set = len(potential_coordinates_for_move)
+                    index = np.random.choice(range(length_of_set))
+                    coords = list(potential_coordinates_for_move)[index]
+                    success = current_player.execute_legal_move(
+                        board=self.board,
+                        coordinate=coords,
+                        move_type=random_move_type
+                    )
+
+                    self._render(current_player)
+
             else:
                 success = False
                 while not success:
@@ -80,10 +88,6 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
-                        print(self.board.get_state().transpose())
-                        print(self._get_eligible_node_centers(
-                                self.board.get_state(), current_player_index=current_player_index
-                        ))
                     self._render(current_player)
             current_player_index = (current_player_index + 1) % len(self.players)
 
@@ -142,14 +146,15 @@ class Quoridor:
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = True
 
-    def _get_eligible_moves(self, state, current_player_index):
+    def _get_legal_moves(self, state, current_player_index):
         eligible_wall_center_coords = self._get_eligible_wall_centers(state)
         eligible_node_center_coords = self._get_eligible_node_centers(state, current_player_index)
+        move_dict = {
+            'place_wall': eligible_wall_center_coords,
+            'move_pawn': eligible_node_center_coords
+        }
 
-        return eligible_wall_center_coords, eligible_node_center_coords
-
-    def _get_legal_moves(self, eligible_moves):
-        pass
+        return move_dict
 
     @staticmethod
     def _get_eligible_wall_centers(state):

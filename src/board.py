@@ -169,6 +169,11 @@ class Board:
         return tuple(int(coord / distance) - 1 for coord in coords)
 
     @staticmethod
+    def denormalize_coordinates(coords, distance=HALF_DISTANCE):
+        return tuple(int(coord + 1) * distance for coord in coords)
+
+
+    @staticmethod
     def add_coordinates(a, b):
         x = int(a[0] + b[0])
         y = int(a[1] + b[1])
