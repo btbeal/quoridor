@@ -35,6 +35,7 @@ class Quoridor:
         while True:
             current_player = self.players[current_player_index]
             if current_player.is_ai:
+                state = self.board.get_state()
                 raise RuntimeError("AI unimplemented")
                 # TODO: implement
                 # while True:
@@ -50,7 +51,6 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
-                        print(self.board.get_state())
                     self._render(current_player)                     
                    
             current_player_index = (current_player_index + 1) % len(self.players)
