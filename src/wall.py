@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pygame
 
-from src.constants import *
+from src.constants import SMALL_CELL, HALF_DISTANCE
 
 
 WHITE = (255, 255, 255)
@@ -24,7 +24,6 @@ class Wall(pygame.sprite.Sprite):
         self.position = position
         self.is_occupied = False
 
-
     @staticmethod
     def _create_image(color, w, h):
         img = pygame.Surface([w, h])
@@ -43,9 +42,13 @@ class Wall(pygame.sprite.Sprite):
 
     def _union_walls(self, adjacent_wall, new_rect):
         if self.is_vertical:
-            self.image = self._create_image(TAN, adjacent_wall.w, adjacent_wall.h + self.h + SMALL_CELL)
+            self.image = self._create_image(
+                TAN, adjacent_wall.w, adjacent_wall.h + self.h + SMALL_CELL
+            )
         else:
-            self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
+            self.image = self._create_image(
+                TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h
+            )
         self.rect = new_rect
 
     @staticmethod
