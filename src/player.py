@@ -6,10 +6,10 @@ class Player(pygame.sprite.Sprite):
     total_walls = 10
     valid_directions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
 
-    def __init__(self, player_number, position, color, radius, is_ai=False):
+    def __init__(self, name, position, color, radius, is_ai=False):
         pygame.sprite.Sprite.__init__(self)
+        self.name = name
         self.radius = radius
-        self.player_number = player_number
         self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(self.image, color, (radius, radius), radius)
         self.rect = self.image.get_rect(center=position)
@@ -55,22 +55,22 @@ class Player(pygame.sprite.Sprite):
         proximal_node = get_proximal_object(self.rect.center, node_direction, nodes)
         proximal_wall = get_proximal_object(self.rect.center, wall_direction, walls)
 
-        if proximal_wall:
-            if not proximal_wall.is_occupied:
-                if proximal_node:
-                    if not proximal_node.is_occupied:
-                        self.rect.center = proximal_node.rect.center
-                        proximal_node.is_occupied = True
-                        current_node.is_occupied = False
-                        return True
-                    else:
-                        next_proximal_wall = get_proximal_object(proximal_node.rect.center, wall_direction, walls)
-                        if next_proximal_wall and not next_proximal_wall.is_occupied:
-                            next_proximal_node = get_proximal_object(proximal_node.rect.center, node_direction, nodes)
-                            self.rect.center = next_proximal_node.rect.center
-                            next_proximal_node.is_occupied = True
-                            current_node.is_occupied = False
-                            return True
+        if not proximal_wall or proximal_wall.is_occupied or not proximal_node:
+            return False
+    
+        if not proximal_node.is_occupied:
+            self.rect.center = proximal_node.rect.center
+            proximal_node.is_occupied = True
+            current_node.is_occupied = False
+            return True
+
+        next_proximal_wall = get_proximal_object(proximal_node.rect.center, wall_direction, walls)
+        if next_proximal_wall and not next_proximal_wall.is_occupied:
+            next_proximal_node = get_proximal_object(proximal_node.rect.center, node_direction, nodes)
+            self.rect.center = next_proximal_node.rect.center
+            next_proximal_node.is_occupied = True
+            current_node.is_occupied = False
+            return True
 
         return False
 
