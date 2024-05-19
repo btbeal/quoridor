@@ -1,34 +1,36 @@
-from src.assemble_board import assemble_board_component_groups
 from src.player import Player
-from pygame.sprite import Group
+from src.board import Board
 from src.constants import *
 import pygame
+from pygame.sprite import Group
+
 
 DEFAULT_FONT_SIZE = 32
 
 
 class Quoridor:
     def __init__(self, players=None, font_size=DEFAULT_FONT_SIZE):
+        # Set up game infrastructure.
         pygame.init()
         pygame.display.set_caption("Quoridor")
         self.screen = pygame.display.set_mode((SCREEN_SIZE_X, SCREEN_SIZE_Y))
-        self.nodes, self.walls = assemble_board_component_groups()
-        if players is None:
-            self.players = Quoridor.default_players()
-        else:
-            self.players = players
-        self.player_group = Group()
-        self.player_group.add(self.players)
         self.font_size = font_size
         self.font = pygame.font.SysFont(None, font_size)
+
+        # Set up players and board.
+        self.players = players if players else Quoridor.default_players()
+        self.board = Board()
+        self.player_group = Group()
+        self.player_group.add(self.players)
+
 
     @staticmethod
     def default_players():
         return [
-            Player(name="Player 1", color=pygame.Color("coral"), position=(GAME_SIZE*0.5, HALF_DISTANCE), radius=0.5*CELL),
-            Player(name="Player 2", color=pygame.Color("blue"), position=(GAME_SIZE*0.5, GAME_SIZE - HALF_DISTANCE), radius=0.5*CELL),
-            Player(name="Player 3", color=pygame.Color("blue"), position=(GAME_SIZE*0.5, GAME_SIZE - HALF_DISTANCE), radius=0.5*CELL)
+            Player(index=0, name="Orange", color=pygame.Color("coral"), position=(GAME_SIZE*0.5, HALF_DISTANCE), radius=0.5*CELL),
+            Player(index=1, name="Blue", color=pygame.Color("blue"), position=(GAME_SIZE*0.5, GAME_SIZE - HALF_DISTANCE), radius=0.5*CELL),
         ]
+
 
     def play_game(self):
         current_player_index = 0
@@ -49,20 +51,22 @@ class Quoridor:
                         if event.type == pygame.QUIT:
                             pygame.quit()
                             quit()
-                        success = current_player.update(event, self.nodes, self.walls, self.players)
+                        success = current_player.update(event, self.board, self.players)
                     self._render(current_player)                     
                    
             current_player_index = (current_player_index + 1) % len(self.players)
 
+
     def _render(self, current_player: Player):
         self.screen.fill(WHITE)
-        self.walls.update()
-        self.walls.draw(self.screen)
-        self.nodes.draw(self.screen)
+        self.board.walls.update()
+        self.board.walls.draw(self.screen)
+        self.board.nodes.draw(self.screen)
         self.player_group.draw(self.screen)
         self._render_metadata(current_player)
         pygame.display.flip()
     
+
     def _render_metadata(self, current_player: Player):
         self.screen.blit(
             self.font.render(f"Current player: {current_player.name}", False, (0, 0, 0)), 

@@ -1,6 +1,9 @@
+from typing import Tuple
+
 import pygame
-from src.constants import DISTANCE, SMALL_CELL
-from src.utils import get_new_position, check_viable_path
+
+from src.constants import *
+
 
 WHITE = (255, 255, 255)
 TAN = (210, 180, 140)
@@ -8,11 +11,11 @@ GRAY = (224, 224, 224)
 
 
 class Wall(pygame.sprite.Sprite):
-    def __init__(self, color=WHITE, position=(0, 0), w=50, h=10, horizontal=True):
+    def __init__(self, color=WHITE, position=(0, 0), w=50, h=10, is_vertical=False):
         pygame.sprite.Sprite.__init__(self)
-        self.horizontal = horizontal
-        self.w = w if horizontal else h
-        self.h = h if horizontal else w
+        self.is_vertical = is_vertical
+        self.w = h if is_vertical else w
+        self.h = w if is_vertical else h
         self.original_image = self._create_image(color, w=self.w, h=self.h)
         self.hover_image = self._create_image(color=TAN, w=self.w, h=self.h)
         self.image = self.original_image
@@ -21,6 +24,7 @@ class Wall(pygame.sprite.Sprite):
         self.position = position
         self.is_occupied = False
 
+
     @staticmethod
     def _create_image(color, w, h):
         img = pygame.Surface([w, h])
@@ -28,70 +32,40 @@ class Wall(pygame.sprite.Sprite):
 
         return img
 
+
     def update(self):
         pos = pygame.mouse.get_pos()
         hit = self.rect.collidepoint(pos)
         if not self.is_occupied:
             self.image = self.hover_image if hit else self.original_image
 
-    def make_wall(self, walls, nodes, players):
-        adjacent_wall = self._get_adjacent_wall(walls)
-        if adjacent_wall and not adjacent_wall.is_occupied:
-            proposed_new_wall = self._get_potential_union_rect(adjacent_wall)
-            if not self._new_wall_intersects_existing_wall(new_rect=proposed_new_wall, walls=walls):
-                adjacent_wall.is_occupied = True
-                self.is_occupied = True
-
-                for player in players:
-                    viable_path_remains = check_viable_path(
-                        nodes=nodes,
-                        walls=walls,
-                        player=player
-                    )
-
-                    if not viable_path_remains:
-                        adjacent_wall.is_occupied = False
-                        self.is_occupied = False
-                        return False
-
-                self.is_occupied = True
-                self.image = self.hover_image
-                self._place_adjacent_wall(adjacent_wall)
-                self._union_walls(adjacent_wall, proposed_new_wall)
-
-                return True
-
-        return False
-
-    def _get_adjacent_wall(self, walls):
-        if self.horizontal:
-            coordinate_to_search = get_new_position(curr_position=self.position, direction='right', distance=DISTANCE)
-        else:
-            coordinate_to_search = get_new_position(curr_position=self.position, direction='down', distance=DISTANCE)
-
-        for wall in walls:
-            if wall.position == coordinate_to_search:
-                return wall
-
-        return None
 
     @staticmethod
     def _place_adjacent_wall(adjacent_wall):
         adjacent_wall.is_occupied = True
         adjacent_wall.image = adjacent_wall.hover_image
 
+
     def _get_potential_union_rect(self, adjacent_wall):
         return pygame.Rect.union(self.rect, adjacent_wall.rect)
 
+
     def _union_walls(self, adjacent_wall, new_rect):
-        if self.horizontal:
-            self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
-        else:
+        if self.is_vertical:
             self.image = self._create_image(TAN, adjacent_wall.w, adjacent_wall.h + self.h + SMALL_CELL)
+        else:
+            self.image = self._create_image(TAN, adjacent_wall.w + self.w + SMALL_CELL, self.h)
         self.rect = new_rect
 
-    @staticmethod
-    def _new_wall_intersects_existing_wall(new_rect, walls):
-        existing_walls = [wall for wall in walls if wall.is_occupied]
 
-        return new_rect.collideobjects(existing_walls)
+    @staticmethod
+    def get_coordinates_in_direction(direction: int) -> Tuple[int, int]:
+        if direction == pygame.K_LEFT:
+            return (-HALF_DISTANCE, 0)
+        if direction == pygame.K_RIGHT:
+            return (HALF_DISTANCE, 0)
+        if direction == pygame.K_UP:
+            return (0, -HALF_DISTANCE)
+        if direction == pygame.K_DOWN:
+            return (0, HALF_DISTANCE)
+        raise RuntimeError(f"Wall direction {direction} not recognized")

@@ -1,13 +1,17 @@
 import pygame
-from src.utils import get_proximal_object, get_objects_around_node, direction_dictionary
+from src.constants import Direction
+from src.board import Board
+from src.utils import get_proximal_object
+from src.node import Node
+from src.wall import Wall
 
 
 class Player(pygame.sprite.Sprite):
     total_walls = 10
-    valid_directions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
 
-    def __init__(self, name, position, color, radius, is_ai=False):
+    def __init__(self, index, name, position, color, radius, is_ai=False):
         pygame.sprite.Sprite.__init__(self)
+        self.index = index
         self.name = name
         self.radius = radius
         self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
@@ -16,12 +20,12 @@ class Player(pygame.sprite.Sprite):
         self.position = position
         self.is_ai = is_ai
 
+
     def update(
-            self,
-            event,
-            nodes,
-            walls,
-            players
+        self,
+        event,
+        board: Board,
+        players,
     ) -> bool:
         """
         Returns whether the given event is a valid move and updates the state of the board
@@ -29,30 +33,38 @@ class Player(pygame.sprite.Sprite):
         """
         if event.type == pygame.KEYDOWN:
             pressed_keys = pygame.key.get_pressed()
-            current_node = self._current_node(nodes)
-            key_list = [key for key in self.valid_directions if pressed_keys[key]]
+            current_node = self._current_node(board.nodes)
+            key_list = [key for key in iter(Direction) if pressed_keys[key]]
             total_keys_pressed = sum(pressed_keys)
 
             if pressed_keys[pygame.K_a] and key_list and total_keys_pressed <= 2:
                 adjacent_movement = key_list[0]
-                return self._move_adjacent(nodes, current_node, walls, adjacent_movement)
+                return self._move_adjacent(board, current_node, adjacent_movement)
 
             if key_list:
                 movement = key_list[0]
-                return self._move(nodes, current_node, walls, movement)
+                return self._move(board.nodes, current_node, board.walls, movement)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            success = Player._place_wall(walls, nodes, players)
+            pos = pygame.mouse.get_pos()
+            walls_to_place = [wall for wall in board.walls if wall.rect.collidepoint(pos)]
+            num_walls_to_place = len(walls_to_place)
+            if not num_walls_to_place or num_walls_to_place > 1:
+                return False
+            
+            success = Player._place_wall(walls_to_place[0], board, players)
             if success:
                 self.total_walls -= 1
                 return True
 
         return False
 
+
     def _move(self, nodes, current_node, walls, movement):
-        node_direction = direction_dictionary[movement]['node']
-        wall_direction = direction_dictionary[movement]['wall']
+        node_direction = Node.get_coordinates_in_direction(movement)
         proximal_node = get_proximal_object(self.rect.center, node_direction, nodes)
+
+        wall_direction = Wall.get_coordinates_in_direction(movement)
         proximal_wall = get_proximal_object(self.rect.center, wall_direction, walls)
 
         if not proximal_wall or proximal_wall.is_occupied or not proximal_node:
@@ -74,12 +86,12 @@ class Player(pygame.sprite.Sprite):
 
         return False
 
-    def _move_adjacent(self, nodes, current_node, walls, adjacent_movement):
+
+    def _move_adjacent(self, board: Board, current_node, adjacent_movement):
         current_node_position = current_node.rect.center
-        surrounding_node_dict = get_objects_around_node(
+        surrounding_node_dict = board.get_objects_around_node(
             current_node_position,
-            group=nodes,
-            valid_directions=self.valid_directions,
+            group=board.nodes,
             exclude_direction=None
         )
 
@@ -88,14 +100,14 @@ class Player(pygame.sprite.Sprite):
             occupied_node_information = occupied_nodes[0]
             occupied_node_object = occupied_node_information[1] # in two player game, only ever expect one occupied node
             occupied_node_direction = occupied_node_information[0]
-            wall_direction = direction_dictionary[adjacent_movement]['wall']
-            node_direction = direction_dictionary[adjacent_movement]['node']
+            wall_direction = Wall.get_coordinates_in_direction(adjacent_movement)
+            node_direction = Node.get_coordinates_in_direction(adjacent_movement)
 
-            requested_node = get_proximal_object(occupied_node_object.rect.center, node_direction, nodes)
+            requested_node = get_proximal_object(occupied_node_object.rect.center, node_direction, board.nodes)
             wall_after_requested_node_direction = tuple(t/2 for t in occupied_node_direction)
 
-            wall_after_requested_node = get_proximal_object(occupied_node_object.rect.center, wall_after_requested_node_direction, walls)
-            potential_wall_blocking_path = get_proximal_object(occupied_node_object.rect.center, wall_direction, walls)
+            wall_after_requested_node = get_proximal_object(occupied_node_object.rect.center, wall_after_requested_node_direction, board.walls)
+            potential_wall_blocking_path = get_proximal_object(occupied_node_object.rect.center, wall_direction, board.walls)
             if requested_node and wall_after_requested_node.is_occupied:
                 if potential_wall_blocking_path and not potential_wall_blocking_path.is_occupied:
                     self.rect.center = requested_node.rect.center
@@ -105,15 +117,6 @@ class Player(pygame.sprite.Sprite):
 
         return False
 
-    @staticmethod
-    def _place_wall(walls, nodes, players):
-        pos = pygame.mouse.get_pos()
-        successful_build = False
-        for wall in walls:
-            if wall.rect.collidepoint(pos):
-                return wall.make_wall(walls, nodes, players)
-
-        return successful_build
 
     def _current_node(self, nodes):
         for node in nodes:
@@ -121,5 +124,35 @@ class Player(pygame.sprite.Sprite):
                 return node
 
         return None
+    
+
+    @staticmethod
+    def _place_wall(wall: Wall, board: Board, players):
+        adjacent_wall = board.get_adjacent_wall(wall)
+        if adjacent_wall and not adjacent_wall.is_occupied:
+            proposed_new_wall = pygame.Rect.union(wall.rect, adjacent_wall.rect)
+            if not board.is_rect_intersecting_existing_wall(proposed_new_wall):
+                adjacent_wall.is_occupied = True
+                wall.is_occupied = True
+
+                for player in players:
+                    viable_path_remains = board.check_viable_path(
+                        player.index,
+                        player.rect.center
+                    )
+
+                    if not viable_path_remains:
+                        adjacent_wall.is_occupied = False
+                        wall.is_occupied = False
+                        return False
+
+                wall.is_occupied = True
+                wall.image = wall.hover_image
+                wall._place_adjacent_wall(adjacent_wall)
+                wall._union_walls(adjacent_wall, proposed_new_wall)
+
+                return True
+
+        return False
 
 
