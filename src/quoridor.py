@@ -19,10 +19,9 @@ class Quoridor:
 
         # Set up players and board.
         self.players = players if players else Quoridor.default_players()
-        self.board = Board()
+        self.board = Board(self.players)
         self.player_group = Group()
         self.player_group.add(self.players)
-
 
     @staticmethod
     def default_players():
@@ -30,7 +29,6 @@ class Quoridor:
             Player(index=0, name="Orange", color=pygame.Color("coral"), position=(GAME_SIZE*0.5, HALF_DISTANCE), radius=0.5*CELL),
             Player(index=1, name="Blue", color=pygame.Color("blue"), position=(GAME_SIZE*0.5, GAME_SIZE - HALF_DISTANCE), radius=0.5*CELL),
         ]
-
 
     def play_game(self):
         current_player_index = 0
@@ -52,10 +50,10 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
+                        print(self.board.get_state())
                     self._render(current_player)                     
                    
             current_player_index = (current_player_index + 1) % len(self.players)
-
 
     def _render(self, current_player: Player):
         self.screen.fill(WHITE)
@@ -65,7 +63,6 @@ class Quoridor:
         self.player_group.draw(self.screen)
         self._render_metadata(current_player)
         pygame.display.flip()
-    
 
     def _render_metadata(self, current_player: Player):
         self.screen.blit(
@@ -82,4 +79,5 @@ class Quoridor:
                 self.font.render(f"Total walls: {player.total_walls}", False, (0, 0, 0)), 
                 (GAME_SIZE + 20, row + self.font_size)
             )
+
 
