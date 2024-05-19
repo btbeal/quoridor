@@ -1,4 +1,6 @@
+from enum import IntEnum
 import numpy as np
+import pygame
 
 SQUARES       = 9
 SPACES        = SQUARES * 2 - 1  # This accounts for wall spacing
@@ -12,7 +14,16 @@ INFO_PANEL_X  = 400
 GAME_SIZE     = CELL_WIDTHS[-1] + x[-1]
 SCREEN_SIZE_X  = CELL_WIDTHS[-1] + x[-1] + INFO_PANEL_X
 SCREEN_SIZE_Y  = GAME_SIZE
-TERMINAL_NODE_Y = {1: (SQUARES*DISTANCE) - HALF_DISTANCE, 2: HALF_DISTANCE}
+TERMINAL_NODE_Y = [
+    (SQUARES*DISTANCE) - HALF_DISTANCE,
+    HALF_DISTANCE
+]
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
+
+class Direction(IntEnum):
+    UP = pygame.K_UP
+    DOWN = pygame.K_DOWN
+    LEFT = pygame.K_LEFT
+    RIGHT = pygame.K_RIGHT

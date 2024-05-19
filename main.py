@@ -1,4 +1,4 @@
-from quoridor import Quoridor
+from src.quoridor import Quoridor
 
 if __name__ == '__main__':
     quoridor = Quoridor()
