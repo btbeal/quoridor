@@ -1,88 +1,86 @@
-name: /Users/brennan.beal/Documents/personal_github/quoridor_rl/env
+name: quoridor-env
 channels:
-  - https://artifactory.prod.flatiron.io/api/conda/conda-remote-conda-forge
-  - https://artifactory.prod.flatiron.io/api/conda/conda-local
-  - https://artifactory.prod.flatiron.io/api/conda/conda-remote-defaults
+  - conda-forge
+  - defaults
 dependencies:
-  - aom=3.8.2=h078ce10_0
-  - bzip2=1.0.8=h93a5062_5
-  - ca-certificates=2024.2.2=hf0a4a13_0
+  - aom=3.9.0=h537b5a7_0
+  - blas=1.0=openblas
+  - bzip2=1.0.8=h80987f9_6
+  - ca-certificates=2024.3.11=hca03da5_0
   - cairo=1.18.0=hd1e100b_0
-  - dav1d=1.2.1=hb547adb_0
-  - expat=2.6.2=hebf3989_0
+  - dav1d=1.2.1=h80987f9_0
+  - expat=2.6.2=h313beb8_0
   - fluidsynth=2.3.5=h9a29e92_0
-  - font-ttf-dejavu-sans-mono=2.37=hab24e00_0
-  - font-ttf-inconsolata=3.000=h77eed37_0
-  - font-ttf-source-code-pro=2.038=h77eed37_0
-  - font-ttf-ubuntu=0.83=h77eed37_2
+  - font-ttf-dejavu-sans-mono=2.37=hd3eb1b0_0
+  - font-ttf-inconsolata=2.001=hcb22688_0
+  - font-ttf-source-code-pro=2.030=hd3eb1b0_0
+  - font-ttf-ubuntu=0.83=h8b1ccd4_0
   - fontconfig=2.14.2=h82840c6_0
-  - fonts-conda-ecosystem=1=0
-  - fonts-conda-forge=1=0
-  - freetype=2.12.1=hadb7bae_2
+  - fonts-anaconda=1=h8fa9717_0
+  - fonts-conda-ecosystem=1=hd3eb1b0_0
+  - freetype=2.12.1=h1192e45_0
   - gettext=0.22.5=h8fbad5d_2
   - gettext-tools=0.22.5=h8fbad5d_2
-  - graphite2=1.3.13=hebf3989_1003
-  - harfbuzz=8.4.0=hbe0f7c0_0
+  - graphite2=1.3.14=hc377ac9_1
+  - harfbuzz=8.5.0=h1836168_0
   - icu=73.2=hc8870d7_0
-  - lame=3.100=h1a8c8d9_1003
+  - lame=3.100=h1a28f6b_0
   - lerc=4.0.0=h9a09cb3_0
   - libasprintf=0.22.5=h8fbad5d_2
   - libasprintf-devel=0.22.5=h8fbad5d_2
-  - libavif16=1.0.4=hff135a0_2
-  - libblas=3.9.0=22_osxarm64_openblas
-  - libcblas=3.9.0=22_osxarm64_openblas
-  - libcxx=16.0.6=h4653b0c_0
+  - libavif16=1.0.4=hc9f3884_3
+  - libcxx=17.0.6=h5f092b4_0
   - libdeflate=1.20=h93a5062_0
-  - libexpat=2.6.2=hebf3989_0
-  - libffi=3.4.2=h3422bc3_5
+  - libffi=3.4.4=hca03da5_1
   - libflac=1.4.3=hb765f3a_0
   - libgettextpo=0.22.5=h8fbad5d_2
   - libgettextpo-devel=0.22.5=h8fbad5d_2
-  - libgfortran=5.0.0=13_2_0_hd922786_3
-  - libgfortran5=13.2.0=hf226fd6_3
-  - libglib=2.80.0=hfc324ee_6
+  - libgfortran=5.0.0=11_3_0_hca03da5_28
+  - libgfortran5=11.3.0=h009349e_28
+  - libglib=2.80.2=h535f939_0
   - libiconv=1.17=h0d3ecfb_2
   - libintl=0.22.5=h8fbad5d_2
   - libintl-devel=0.22.5=h8fbad5d_2
   - libjpeg-turbo=3.0.0=hb547adb_1
-  - liblapack=3.9.0=22_osxarm64_openblas
   - libmad=0.15.1b=h1a8c8d9_1001
-  - libogg=1.3.4=h27ca646_1
-  - libopenblas=0.3.27=openmp_h6c19121_0
+  - libogg=1.3.5=h1a28f6b_1
+  - libopenblas=0.3.21=h269037a_0
   - libopus=1.3.1=h27ca646_1
-  - libpng=1.6.43=h091b4b1_0
+  - libpng=1.6.39=h80987f9_0
   - libsndfile=1.2.2=h9739721_1
   - libsqlite=3.45.3=h091b4b1_0
   - libtiff=4.6.0=h07db509_3
-  - libvorbis=1.3.7=h9f76cd9_0
-  - libwebp-base=1.4.0=h93a5062_0
+  - libvorbis=1.3.7=h1a28f6b_0
+  - libwebp-base=1.3.2=h80987f9_0
   - libzlib=1.2.13=h53f4e23_5
-  - llvm-openmp=18.1.4=hbf6887a_0
+  - llvm-openmp=14.0.6=hc6e5704_0
+  - lz4-c=1.9.4=h313beb8_1
   - mpg123=1.32.6=hebf3989_0
-  - ncurses=6.4.20240210=h078ce10_0
-  - numpy=1.26.4=py39h7aa2656_0
-  - openssl=3.3.0=h0d3ecfb_0
+  - ncurses=6.4=h313beb8_0
+  - numpy=1.26.4=py39h3b2db8e_0
+  - numpy-base=1.26.4=py39ha9811e2_0
+  - openssl=3.0.13=h1a28f6b_1
   - opusfile=0.12=h5643135_2
   - pcre2=10.43=h26f9a81_0
-  - pip=24.0=pyhd8ed1ab_0
+  - pip=24.0=py39hca03da5_0
   - pixman=0.43.4=hebf3989_0
   - portaudio=19.6.0=h13dd4ca_9
   - portmidi=2.0.4=h13dd4ca_2
   - pygame=2.5.2=py39ha1ca32f_2
-  - python=3.9.19=hd7ebdb9_0_cpython
+  - python=3.9.16=hea58f1e_0_cpython
   - python_abi=3.9=4_cp39
   - rav1e=0.6.6=h69fbcac_2
-  - readline=8.2=h92ec313_1
+  - readline=8.2=h1a28f6b_0
   - sdl2=2.30.2=hebf3989_0
-  - sdl2_image=2.8.2=h7b7b4f6_0
+  - sdl2_image=2.8.0=h5a3017b_0
   - sdl2_mixer=2.6.3=h4fe3bdc_1
   - sdl2_ttf=2.22.0=h4df98e8_1
-  - setuptools=69.5.1=pyhd8ed1ab_0
+  - setuptools=69.5.1=py39hca03da5_0
+  - sqlite=3.45.3=h80987f9_0
   - svt-av1=2.0.0=h078ce10_0
-  - tk=8.6.13=h5083fa2_1
-  - tzdata=2024a=h0c530f3_0
-  - wheel=0.43.0=pyhd8ed1ab_1
-  - xz=5.2.6=h57fd34a_0
+  - tk=8.6.14=h6ba3021_0
+  - tzdata=2024a=h04d1e81_0
+  - wheel=0.43.0=py39hca03da5_0
+  - xz=5.4.6=h80987f9_1
   - zlib=1.2.13=h53f4e23_5
-  - zstd=1.5.6=hb46c0d2_0
-prefix: /Users/brennan.beal/Documents/personal_github/quoridor_rl/env
+  - zstd=1.5.5=hd90d995_2
