@@ -59,11 +59,3 @@ class Quoridor:
 
 
             current_player = (current_player % len(self.players)) + 1
-
-
-if __name__ == '__main__':
-    quoridor = Quoridor()
-    quoridor.play_game()
-
-
-
