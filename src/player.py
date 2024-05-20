@@ -1,4 +1,6 @@
+import numpy as np
 import pygame
+
 from src.constants import Direction
 from src.board import Board
 from src.utils import get_proximal_object
@@ -13,13 +15,17 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.color = color
         self.index = index
+        self.matrix_representation = (index + 1) * 10
         self.name = name
         self.radius = radius
         self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(self.image, self.color, (radius, radius), radius)
         self.rect = self.image.get_rect(center=position)
         self.position = position
+
+        # ai attributes
         self.is_ai = is_ai
+        self.epsilon = 0.0
 
     def update(
         self,
@@ -172,3 +178,25 @@ class Player(pygame.sprite.Sprite):
                 return True
 
         return False
+
+    @staticmethod
+    def choose_from_legal_moves(legal_move_dict):
+        random_move_type = np.random.choice(list(legal_move_dict.keys()))
+        potential_coordinates_for_move = legal_move_dict[random_move_type]
+        length_of_set = len(potential_coordinates_for_move)
+        np.random.choice(range(length_of_set))
+
+    def execute_legal_move(self, board, coordinate, move_type):
+        current_node = self._current_node(board.nodes)
+        print(current_node)
+        if move_type == 'move_pawn':
+            new_node = [node for node in board.nodes if board.normalize_coordinates(node.rect.center) == coordinate]
+            new_node = new_node[0]
+            self.rect.center = board.denormalize_coordinates(coordinate)
+            new_node.is_occupied = True
+            current_node.is_occupied = False
+            return True
+        else:
+            for wall in board.walls:
+                if board.normalize_coordinates(wall.rect.center) == coordinate:
+                    return self._place_wall(wall, board=board, players=board.players)

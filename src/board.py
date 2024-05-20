@@ -127,10 +127,18 @@ class Board:
         return False
 
     def get_state(self):
-        game_state = np.zeros((SPACES, SPACES))
+        """
+        Represents the board as 17 X 17 (SPACES X SPACES) matrix with the following notation:
+            2 = all unoccupied walls
+            1 = all occupied walls
+            0 = all unoccupied nodes
+            player number * 10 = player position (and thus the only occupied nodes)
+        :return: matrix
+        """
+        game_state = np.full((SPACES, SPACES), 2)
 
         for wall in self.walls:
-            normalized_coordinates = self._normalize_coordinates(wall.rect.center)
+            normalized_coordinates = self.normalize_coordinates(wall.rect.center)
             if wall.is_occupied:
                 x_coord = normalized_coordinates[0]
                 y_coord = normalized_coordinates[1]
@@ -145,12 +153,63 @@ class Board:
             else:
                 game_state[normalized_coordinates] = 2
 
+        for node in self.nodes:
+            normalized_coordinates = self.normalize_coordinates(node.rect.center)
+            if not node.is_occupied:
+                game_state[normalized_coordinates] = 0
+
         for player in self.players:
-            normalized_coordinates = self._normalize_coordinates(player.rect.center)
-            game_state[normalized_coordinates] = (player.index + 1) * 10
+            normalized_coordinates = self.normalize_coordinates(player.rect.center)
+            game_state[normalized_coordinates] = player.matrix_representation
 
         return game_state
 
     @staticmethod
-    def _normalize_coordinates(coords, distance=HALF_DISTANCE):
+    def normalize_coordinates(coords, distance=HALF_DISTANCE):
         return tuple(int(coord / distance) - 1 for coord in coords)
+
+    @staticmethod
+    def denormalize_coordinates(coords, distance=HALF_DISTANCE):
+        return tuple(int(coord + 1) * distance for coord in coords)
+
+
+    @staticmethod
+    def add_coordinates(a, b):
+        x = int(a[0] + b[0])
+        y = int(a[1] + b[1])
+
+        return tuple((x, y))
+
+    def get_walls_around_node(self, normalized_node_coordinates, state=None, max_dim=SPACES):
+        if state is not None:
+            state = self.get_state()
+
+        occupied_walls = {}
+        for direction in Direction:
+            normalized_wall_coords = Wall.get_coordinates_in_direction(direction=direction, use_normalized=True)
+            new_wall_coords = self.add_coordinates(normalized_wall_coords, normalized_node_coordinates)
+            wall_x_bool = (0 <= new_wall_coords[0] < max_dim)
+            wall_y_bool = (0 <= new_wall_coords[1] < max_dim)
+            if wall_x_bool and wall_y_bool and state[new_wall_coords] == 1:
+                occupied_walls[direction] = new_wall_coords
+
+        return occupied_walls
+
+    def get_nodes_around_node(self, normalized_node_coordinates, state=None, max_dim=SPACES):
+        if state is not None:
+            state = self.get_state()
+
+        available_nodes = {}
+        for direction in Direction:
+            normalized_node_coords = Node.get_coordinates_in_direction(direction=direction, use_normalized=True)
+            new_node_coords = self.add_coordinates(normalized_node_coords, normalized_node_coordinates)
+            new_x_bool = (0 <= new_node_coords[0] < max_dim)
+            new_y_bool = (0 <= new_node_coords[1] < max_dim)
+            if new_x_bool and new_y_bool:
+                available_nodes[direction] = new_node_coords
+
+        return available_nodes
+
+
+
+
