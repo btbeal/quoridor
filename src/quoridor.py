@@ -223,9 +223,3 @@ class Quoridor:
                                     eligible_coords.add(nodes_around_opponent_node_dict[direct])
 
         return eligible_coords
-
-
-
-
-
-
