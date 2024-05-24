@@ -19,6 +19,7 @@ players = [
         color=pygame.Color("blue"),
         position=(GAME_SIZE * 0.5, GAME_SIZE - HALF_DISTANCE),
         radius=0.5 * CELL,
+        is_ai=True
     ),
 ]
 
