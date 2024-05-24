@@ -76,7 +76,7 @@ class Quoridor:
                         coordinate=coords,
                         move_type=random_move_type
                     )
-                    time.sleep(2)
+                    time.sleep(1)
 
                 self._render(current_player)
 

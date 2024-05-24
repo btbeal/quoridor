@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pygame
 
-from src.constants import SMALL_CELL, HALF_DISTANCE
+from src.constants import SMALL_CELL, HALF_DISTANCE, Direction
 
 
 WHITE = (255, 255, 255)
@@ -58,12 +58,4 @@ class Wall(pygame.sprite.Sprite):
         else:
             distance = HALF_DISTANCE
 
-        if direction == pygame.K_LEFT:
-            return (-distance, 0)
-        if direction == pygame.K_RIGHT:
-            return (distance, 0)
-        if direction == pygame.K_UP:
-            return (0, -distance)
-        if direction == pygame.K_DOWN:
-            return (0, distance)
-        raise RuntimeError(f"Wall direction {direction} not recognized")
+        return Direction.get_offset(direction, distance)
