@@ -27,3 +27,12 @@ class Direction(IntEnum):
     LEFT = pygame.K_LEFT
     RIGHT = pygame.K_RIGHT
 
+    @classmethod
+    def get_offset(cls, direction, distance):
+        direction_map = {
+            cls.RIGHT: (distance, 0),
+            cls.LEFT: (-distance, 0),
+            cls.UP: (0, -distance),
+            cls.DOWN: (0, distance)
+        }
+        return direction_map.get(direction)

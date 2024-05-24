@@ -1,5 +1,5 @@
 import numpy as np
-
+import time
 import pygame
 from pygame.sprite import Group
 
@@ -76,8 +76,9 @@ class Quoridor:
                         coordinate=coords,
                         move_type=random_move_type
                     )
+                    time.sleep(1)
 
-                    self._render(current_player)
+                self._render(current_player)
 
             else:
                 success = False
@@ -88,6 +89,10 @@ class Quoridor:
                             pygame.quit()
                             quit()
                         success = current_player.update(event, self.board, self.players)
+                        print(self.board.get_state().transpose())
+                        print(self._get_eligible_node_centers(
+                                self.board.get_state(), current_player_index=current_player_index
+                        ))
                     self._render(current_player)
             current_player_index = (current_player_index + 1) % len(self.players)
 
@@ -147,17 +152,22 @@ class Quoridor:
                     waiting = True
 
     def _get_legal_moves(self, state, current_player_index):
-        eligible_wall_center_coords = self._get_eligible_wall_centers(state)
-        eligible_node_center_coords = self._get_eligible_node_centers(state, current_player_index)
+        current_player = self.players[current_player_index]
+        eligible_wall_coords = []
+        if current_player.total_walls > 0:
+            eligible_wall_coords = self._get_eligible_wall_coords(state)
+
+        eligible_node_coords = self._get_eligible_node_coords(state, current_player_index)
+
         move_dict = {
-            'place_wall': eligible_wall_center_coords,
-            'move_pawn': eligible_node_center_coords
+            'place_wall': eligible_wall_coords,
+            'move_pawn': eligible_node_coords
         }
 
         return move_dict
 
     @staticmethod
-    def _get_eligible_wall_centers(state):
+    def _get_eligible_wall_coords(state):
         rows, cols = state.shape
         eligible_coords = set()
 
@@ -165,19 +175,19 @@ class Quoridor:
             j = 1
             while j <= cols - 3:
                 if state[i, j] == 2 and state[i, j + 1] == 2 and state[i, j + 2] == 2:
-                    eligible_coords.add((i, j + 1))  # Add the center coordinate
+                    eligible_coords.add((i, j + 1))
                 j += 1
 
         for j in range(cols):
             i = 1
             while i <= rows - 3:
                 if state[i, j] == 2 and state[i + 1, j] == 2 and state[i + 2, j] == 2:
-                    eligible_coords.add((i + 1, j))  # Add the center coordinate
+                    eligible_coords.add((i + 1, j))
                 i += 1
 
         return eligible_coords
 
-    def _get_eligible_node_centers(self, state, current_player_index, max_dim=SPACES):
+    def _get_eligible_node_coords(self, state, current_player_index, max_dim=SPACES):
         for player in self.players:
             if player.index != current_player_index:
                 x_opponent, y_opponent = np.argwhere(state == player.matrix_representation)[0]

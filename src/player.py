@@ -188,7 +188,6 @@ class Player(pygame.sprite.Sprite):
 
     def execute_legal_move(self, board, coordinate, move_type):
         current_node = self._current_node(board.nodes)
-        print(current_node)
         if move_type == 'move_pawn':
             new_node = [node for node in board.nodes if board.normalize_coordinates(node.rect.center) == coordinate]
             new_node = new_node[0]
@@ -199,4 +198,10 @@ class Player(pygame.sprite.Sprite):
         else:
             for wall in board.walls:
                 if board.normalize_coordinates(wall.rect.center) == coordinate:
-                    return self._place_wall(wall, board=board, players=board.players)
+                    success = self._place_wall(wall, board=board, players=board.players)
+                    if success:
+                        self.total_walls -= 1
+                        return success
+
+            return False
+
