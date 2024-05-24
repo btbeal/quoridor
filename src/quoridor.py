@@ -153,7 +153,7 @@ class Quoridor:
 
     def _get_legal_moves(self, state, current_player_index):
         current_player = self.players[current_player_index]
-        eligible_wall_coords = None
+        eligible_wall_coords = []
         if current_player.total_walls > 0:
             eligible_wall_coords = self._get_eligible_wall_coords(state)
 
