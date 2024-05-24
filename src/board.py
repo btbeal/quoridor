@@ -58,16 +58,18 @@ class Board:
 
         return None
 
-    def _get_new_position(self, curr_position, direction, distance):
+    @staticmethod
+    def _get_new_position(curr_position, direction, distance):
         if direction == Direction.RIGHT:
-            new_position = tuple(map(sum, zip(curr_position, (distance, 0))))
+            coordinate_tuple = tuple((distance, 0))
         elif direction == Direction.LEFT:
-            new_position = tuple(map(sum, zip(curr_position, (-distance, 0))))
+            coordinate_tuple = tuple((-distance, 0))
         elif direction == Direction.UP:
-            new_position = tuple(map(sum, zip(curr_position, (0, -distance))))
+            coordinate_tuple = tuple((0, -distance))
         elif direction == Direction.DOWN:
-            new_position = tuple(map(sum, zip(curr_position, (0, distance))))
+            coordinate_tuple = tuple((0, distance))
 
+        new_position = tuple(map(sum, zip(curr_position, coordinate_tuple)))
         return new_position
 
     def is_rect_intersecting_existing_wall(self, rect: Rect):
@@ -209,6 +211,7 @@ class Board:
                 available_nodes[direction] = new_node_coords
 
         return available_nodes
+
 
 
 

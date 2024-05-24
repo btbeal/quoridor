@@ -26,4 +26,3 @@ class Direction(IntEnum):
     DOWN = pygame.K_DOWN
     LEFT = pygame.K_LEFT
     RIGHT = pygame.K_RIGHT
-
