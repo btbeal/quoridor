@@ -51,19 +51,19 @@ class Player(pygame.sprite.Sprite):
                 movement = key_list[0]
                 return self._move(board.nodes, current_node, board.walls, movement)
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            pos = pygame.mouse.get_pos()
-            walls_to_place = [
-                wall for wall in board.walls if wall.rect.collidepoint(pos)
-            ]
-            num_walls_to_place = len(walls_to_place)
-            if not num_walls_to_place:
-                return False
-
-            success = Player._place_wall(walls_to_place[0], board, players)
-            if success:
-                self.total_walls -= 1
-                return True
+        #if event.type == pygame.MOUSEBUTTONDOWN:
+        #    pos = pygame.mouse.get_pos()
+        #    walls_to_place = [
+        #        wall for wall in board.walls if wall.rect.collidepoint(pos)
+        #    ]
+        #    num_walls_to_place = len(walls_to_place)
+        #    if not num_walls_to_place:
+        #        return False
+#
+        #    success = Player._place_wall(walls_to_place[0], board, players)
+        #    if success:
+        #        self.total_walls -= 1
+        #        return True
 
         return False
 
@@ -152,32 +152,15 @@ class Player(pygame.sprite.Sprite):
 
         return None
 
-    @staticmethod
-    def _place_wall(wall: Wall, board: Board, players):
-        adjacent_wall = board.get_adjacent_wall(wall)
-        if adjacent_wall and not adjacent_wall.is_occupied:
-            proposed_new_wall = pygame.Rect.union(wall.rect, adjacent_wall.rect)
-            if not board.is_rect_intersecting_existing_wall(proposed_new_wall):
-                adjacent_wall.is_occupied = True
-                wall.is_occupied = True
+    def place_legal_wall(self, board, validated_wall):
+        adjacent_wall = board.get_adjacent_wall(validated_wall)
+        proposed_new_wall = pygame.Rect.union(validated_wall.rect, adjacent_wall.rect)
+        validated_wall.is_occupied = True
+        validated_wall.image = validated_wall.hover_image
+        validated_wall.union_walls(adjacent_wall, proposed_new_wall)
+        adjacent_wall.kill()
+        self.total_walls -= 1
 
-                for player in players:
-                    viable_path_remains = board.check_viable_path(
-                        player.index, player.rect.center
-                    )
-
-                    if not viable_path_remains:
-                        adjacent_wall.is_occupied = False
-                        wall.is_occupied = False
-                        return False
-
-                wall.image = wall.hover_image
-                wall._union_walls(adjacent_wall, proposed_new_wall)
-                adjacent_wall.kill()
-
-                return True
-
-        return False
 
     @staticmethod
     def choose_from_legal_moves(legal_move_dict):
@@ -197,11 +180,10 @@ class Player(pygame.sprite.Sprite):
             return True
         else:
             for wall in board.walls:
-                if board.normalize_coordinates(wall.rect.center) == coordinate:
-                    success = self._place_wall(wall, board=board, players=board.players)
-                    if success:
-                        self.total_walls -= 1
-                        return success
+                if wall.rect.center == coordinate:
+                    self.place_legal_wall(board=board, validated_wall=wall)
+                    self.total_walls -= 1
+                    return True
 
             return False
 

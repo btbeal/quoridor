@@ -11,9 +11,7 @@ from src.constants import (
     GAME_SIZE,
     CELL,
     HALF_DISTANCE,
-    WHITE,
     TERMINAL_NODE_Y,
-    SEMI_BLACK,
     Direction,
 )
 from src.node import Node
@@ -65,6 +63,8 @@ class Quoridor(RenderMixin):
             if current_player.is_ai:
                 success = False
                 while not success:
+                    # get_legal_moves
+                    # -- get_wall
                     state = self.board.get_state()
                     legal_move_dict = self._get_legal_moves(state=state, current_player_index=current_player_index)
                     random_move_type = np.random.choice(list(legal_move_dict.keys()))
@@ -77,7 +77,6 @@ class Quoridor(RenderMixin):
                         coordinate=coords,
                         move_type=random_move_type
                     )
-                    time.sleep(1)
 
                 self._render(current_player)
 
@@ -85,17 +84,26 @@ class Quoridor(RenderMixin):
                 success = False
                 while not success:
                     events = pygame.event.get()
+                    pos = pygame.mouse.get_pos()
                     for event in events:
                         if event.type == pygame.QUIT:
                             pygame.quit()
                             quit()
-                        success = current_player.update(event, self.board, self.players)
-                        print(self.board.get_state().transpose())
-                        print(self._get_eligible_node_centers(
-                                self.board.get_state(), current_player_index=current_player_index
-                        ))
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            wall_to_place = next(
+                                (wall for wall in self.board.walls if wall.rect.collidepoint(pos))
+                                , None
+                            )
+                            if not wall_to_place:
+                                success = False
+
+                            if self._wall_is_legal(wall_to_place) and current_player.total_walls > 0:
+                                current_player.place_legal_wall(self.board, wall_to_place)
+                                success = True
+                        else:
+                            success = current_player.update(event, self.board, self.players)
                     self._render(current_player)
-            current_player_index = (current_player_index + 1) % len(self.players)
+                current_player_index = (current_player_index + 1) % len(self.players)
 
     @staticmethod
     def _is_winner(current_player):
@@ -105,7 +113,10 @@ class Quoridor(RenderMixin):
         current_player = self.players[current_player_index]
         eligible_wall_coords = []
         if current_player.total_walls > 0:
-            eligible_wall_coords = self._get_eligible_wall_coords(state)
+            walls = self._get_legal_walls()
+            eligible_wall_coords = []
+            for wall in walls:
+                eligible_wall_coords.append(wall.rect.center)
 
         eligible_node_coords = self._get_eligible_node_coords(state, current_player_index)
 
@@ -116,26 +127,39 @@ class Quoridor(RenderMixin):
 
         return move_dict
 
-    @staticmethod
-    def _get_eligible_wall_coords(state):
-        rows, cols = state.shape
-        eligible_coords = set()
+    def _get_legal_walls(self):
+        walls = self.board.walls
+        legal_walls = []
+        for wall in walls:
+            if self._wall_is_legal(wall):
+                legal_walls.append(wall)
 
-        for i in range(rows):
-            j = 1
-            while j <= cols - 3:
-                if state[i, j] == 2 and state[i, j + 1] == 2 and state[i, j + 2] == 2:
-                    eligible_coords.add((i, j + 1))
-                j += 1
+        return legal_walls
 
-        for j in range(cols):
-            i = 1
-            while i <= rows - 3:
-                if state[i, j] == 2 and state[i + 1, j] == 2 and state[i + 2, j] == 2:
-                    eligible_coords.add((i + 1, j))
-                i += 1
+    def _wall_is_legal(self, wall):
+        board = self.board
+        adjacent_wall = self.board.get_adjacent_wall(wall)
+        if adjacent_wall and not adjacent_wall.is_occupied:
+            proposed_new_wall = pygame.Rect.union(wall.rect, adjacent_wall.rect)
+            if not board.is_rect_intersecting_existing_wall(proposed_new_wall):
+                adjacent_wall.is_occupied = True
+                wall.is_occupied = True
 
-        return eligible_coords
+                for player in self.players:
+                    viable_path_remains = board.check_viable_path(
+                        player.index, player.rect.center
+                    )
+
+                    if not viable_path_remains:
+                        adjacent_wall.is_occupied = False
+                        wall.is_occupied = False
+                        return False
+
+                adjacent_wall.is_occupied = False
+                wall.is_occupied = False
+                return True
+
+        return False
 
     def _get_eligible_node_coords(self, state, current_player_index, max_dim=SPACES):
         for player in self.players:
