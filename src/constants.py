@@ -36,3 +36,23 @@ class Direction(IntEnum):
             cls.DOWN: (0, distance)
         }
         return direction_map.get(direction)
+
+    @classmethod
+    def get_adjacent_directions(cls, direction):
+        adjacent_direction_map = {
+            cls.RIGHT: [cls.UP, cls.DOWN],
+            cls.LEFT: [cls.UP, cls.DOWN],
+            cls.UP: [cls.RIGHT, cls.LEFT],
+            cls.DOWN: [cls.RIGHT, cls.LEFT]
+        }
+        return adjacent_direction_map.get(direction)
+
+    @classmethod
+    def get_opposite_direction(cls, direction):
+        opposite_direction_map = {
+            cls.RIGHT: cls.LEFT,
+            cls.LEFT: cls.RIGHT,
+            cls.UP: cls.DOWN,
+            cls.DOWN: cls.UP
+        }
+        return opposite_direction_map.get(direction)

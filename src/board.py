@@ -171,46 +171,57 @@ class Board:
         return tuple(int(coord / distance) - 1 for coord in coords)
 
     @staticmethod
-    def denormalize_coordinates(coords, distance=HALF_DISTANCE):
-        return tuple(int(coord + 1) * distance for coord in coords)
-
-
-    @staticmethod
     def add_coordinates(a, b):
         x = int(a[0] + b[0])
         y = int(a[1] + b[1])
 
         return tuple((x, y))
 
-    def get_walls_around_node(self, normalized_node_coordinates, state=None, max_dim=SPACES):
-        if state is not None:
-            state = self.get_state()
+    def get_walls_around_node(self, node_coordinates, directions=Direction):
+        walls_around_node = {}
+        for direction in directions:
+            wall_vector = Wall.get_coordinates_in_direction(direction=direction)
+            wall_coords = self.add_coordinates(node_coordinates, wall_vector)
+            wall = next(
+                (wall for wall in self.walls if wall.rect.center == wall_coords),
+                None
+            )
 
-        occupied_walls = {}
+            walls_around_node[direction] = wall
+
+        return walls_around_node
+
+    def get_nodes_around_node(self, node_coordinates, directions=Direction):
+        nodes_around_node = {}
+        for direction in directions:
+            node_vector = Node.get_coordinates_in_direction(direction=direction)
+            node_coords = self.add_coordinates(node_coordinates, node_vector)
+            node = next(
+                (node for node in self.nodes if node.rect.center == node_coords),
+                None
+            )
+
+            nodes_around_node[direction] = node
+
+        return nodes_around_node
+
+    def get_direction_of_proximal_player(self, current_player):
+        current_node_coordinates = current_player.rect.center
+        other_occupied_node_coordinates = next(
+            player.rect.center for player in self.players if player.rect.center != current_node_coordinates
+        )
+
+        player_direction = []
         for direction in Direction:
-            normalized_wall_coords = Wall.get_coordinates_in_direction(direction=direction, use_normalized=True)
-            new_wall_coords = self.add_coordinates(normalized_wall_coords, normalized_node_coordinates)
-            wall_x_bool = (0 <= new_wall_coords[0] < max_dim)
-            wall_y_bool = (0 <= new_wall_coords[1] < max_dim)
-            if wall_x_bool and wall_y_bool and state[new_wall_coords] == 1:
-                occupied_walls[direction] = new_wall_coords
+            offset = Node.get_coordinates_in_direction(direction)
+            possible_position = tuple(map(sum, zip(current_node_coordinates, offset)))
+            if possible_position == other_occupied_node_coordinates:
+                player_direction.append(direction)
 
-        return occupied_walls
+        if player_direction:
+            return player_direction[0]
 
-    def get_nodes_around_node(self, normalized_node_coordinates, state=None, max_dim=SPACES):
-        if state is not None:
-            state = self.get_state()
-
-        available_nodes = {}
-        for direction in Direction:
-            normalized_node_coords = Node.get_coordinates_in_direction(direction=direction, use_normalized=True)
-            new_node_coords = self.add_coordinates(normalized_node_coords, normalized_node_coordinates)
-            new_x_bool = (0 <= new_node_coords[0] < max_dim)
-            new_y_bool = (0 <= new_node_coords[1] < max_dim)
-            if new_x_bool and new_y_bool:
-                available_nodes[direction] = new_node_coords
-
-        return available_nodes
+        return None
 
 
 
