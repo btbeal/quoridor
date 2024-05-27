@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import pygame
 from pygame.sprite import Group
 
@@ -7,17 +6,15 @@ from src.board import Board
 from src.constants import (
     SCREEN_SIZE_X,
     SCREEN_SIZE_Y,
-    SPACES,
     GAME_SIZE,
     CELL,
     HALF_DISTANCE,
     TERMINAL_NODE_Y,
     Direction,
 )
-from src.node import Node
+
 from src.player import Player
 from src.render_mixin import RenderMixin
-from src.wall import Wall
 
 
 DEFAULT_FONT_SIZE = 32
@@ -64,8 +61,6 @@ class Quoridor(RenderMixin):
             if current_player.is_ai:
                 success = False
                 while not success:
-                    # get_legal_moves
-                    # -- get_wall
                     board = self.board
                     state = board.get_state()
                     legal_move_dict = self._get_legal_moves(current_player)
@@ -189,53 +184,6 @@ class Quoridor(RenderMixin):
                 return True
 
         return False
-
-    def _get_eligible_node_coords(self, state, current_player_index, max_dim=SPACES):
-        for player in self.players:
-            if player.index != current_player_index:
-                x_opponent, y_opponent = np.argwhere(state == player.matrix_representation)[0]
-            else:
-                x, y = np.argwhere(state == player.matrix_representation)[0]
-
-        current_coords = tuple((x, y))
-        eligible_coords = set()
-        occupied_walls_around_current_node_dict = self.board.get_walls_around_node(
-            normalized_node_coordinates=current_coords,
-            state=state
-        )
-        for direction in Direction:
-            node_direction_to_add = Node.get_coordinates_in_direction(direction=direction, use_normalized=True)
-            new_node_coords = Board.add_coordinates(current_coords, node_direction_to_add)
-            x_bool = (0 <= new_node_coords[0] < max_dim)
-            y_bool = (0 <= new_node_coords[1] < max_dim)
-            coords_are_opponents = new_node_coords == (x_opponent, y_opponent)
-            if not occupied_walls_around_current_node_dict.get(direction):
-                if x_bool and y_bool and not coords_are_opponents:
-                    eligible_coords.add(new_node_coords)
-                elif coords_are_opponents:
-                    occupied_walls_around_opponent_node_dict = self.board.get_walls_around_node(
-                        normalized_node_coordinates=new_node_coords,
-                        state=state
-                    )
-
-                    nodes_around_opponent_node_dict = self.board.get_nodes_around_node(
-                        normalized_node_coordinates=new_node_coords,
-                        state=state
-                    )
-
-                    if not occupied_walls_around_opponent_node_dict.get(direction) and nodes_around_opponent_node_dict.get(direction):
-                        eligible_coords.add(nodes_around_opponent_node_dict[direction])
-                    elif occupied_walls_around_opponent_node_dict.get(direction): # wall behind opponent node
-                        if direction in [Direction.UP, Direction.DOWN]:
-                            for direct in [Direction.LEFT, Direction.RIGHT]:
-                                if not occupied_walls_around_opponent_node_dict.get(direct) and nodes_around_opponent_node_dict.get(direct):
-                                    eligible_coords.add(nodes_around_opponent_node_dict[direct])
-                        else:
-                            for direct in [Direction.UP, Direction.DOWN]:
-                                if not occupied_walls_around_opponent_node_dict.get(direct) and nodes_around_opponent_node_dict.get(direct):
-                                    eligible_coords.add(nodes_around_opponent_node_dict[direct])
-
-        return eligible_coords
 
     def _get_legal_adjacent_moves(self, current_player):
         other_player_direction = self.board.get_direction_of_proximal_player(current_player)

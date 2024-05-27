@@ -1,11 +1,4 @@
-import numpy as np
 import pygame
-
-from src.constants import Direction
-from src.board import Board
-from src.utils import get_proximal_object
-from src.node import Node
-from src.wall import Wall
 
 
 class Player(pygame.sprite.Sprite):
@@ -22,10 +15,7 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, self.color, (radius, radius), radius)
         self.rect = self.image.get_rect(center=position)
         self.position = position
-
-        # ai attributes
         self.is_ai = is_ai
-        self.epsilon = 0.0
 
     def current_node(self, nodes):
         for node in nodes:
