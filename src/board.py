@@ -1,7 +1,6 @@
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
-import pygame
 from pygame.sprite import Group
 from pygame.rect import Rect
 
@@ -161,20 +160,10 @@ class Board:
         return nodes_around_node
 
     def get_direction_of_proximal_player(self, current_player):
-        current_node_coordinates = current_player.rect.center
-        other_occupied_node_coordinates = next(
-            player.rect.center for player in self.players if player.rect.center != current_node_coordinates
-        )
-
-        player_direction = []
-        for direction in Direction:
-            offset = Node.get_coordinates_in_direction(direction)
-            possible_position = self.add_coordinates(current_node_coordinates, offset)
-            if possible_position == other_occupied_node_coordinates:
-                player_direction.append(direction)
-
-        if player_direction:
-            return player_direction[0]
+        nodes_around_player = self.get_nodes_around_node(current_player.rect.center)
+        for direction, node in nodes_around_player.items():
+            if node and node.is_occupied:
+                return direction
 
         return None
 
