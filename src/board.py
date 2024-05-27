@@ -7,7 +7,6 @@ from pygame.rect import Rect
 
 from src.node import Node
 from src.wall import Wall
-from src.utils import get_proximal_object
 from src.constants import DISTANCE, HALF_DISTANCE, SPACES, TERMINAL_NODE_Y, Direction, x
 
 
@@ -43,58 +42,20 @@ class Board:
 
     def get_adjacent_wall(self, wall: Wall):
         if wall.is_vertical:
-            coordinate_to_search = self._get_new_position(
-                curr_position=wall.position, direction=Direction.DOWN, distance=DISTANCE
-            )
+            direction_vector = Direction.get_offset(Direction.DOWN, DISTANCE)
         else:
-            coordinate_to_search = self._get_new_position(
-                curr_position=wall.position,
-                direction=Direction.RIGHT,
-                distance=DISTANCE,
-            )
+            direction_vector = Direction.get_offset(Direction.RIGHT, DISTANCE)
+
+        coordinate_to_search = self.add_coordinates(direction_vector, wall.rect.center)
         for wall in self.walls:
             if wall.position == coordinate_to_search:
                 return wall
 
         return None
 
-    @staticmethod
-    def _get_new_position(curr_position, direction, distance):
-        if direction == Direction.RIGHT:
-            coordinate_tuple = tuple((distance, 0))
-        elif direction == Direction.LEFT:
-            coordinate_tuple = tuple((-distance, 0))
-        elif direction == Direction.UP:
-            coordinate_tuple = tuple((0, -distance))
-        elif direction == Direction.DOWN:
-            coordinate_tuple = tuple((0, distance))
-
-        new_position = tuple(map(sum, zip(curr_position, coordinate_tuple)))
-        return new_position
-
     def is_rect_intersecting_existing_wall(self, rect: Rect):
         existing_walls = [wall for wall in self.walls if wall.is_occupied]
         return rect.collideobjects(existing_walls)
-
-    def get_objects_around_node(
-        self,
-        curr_position,
-        group: Union[list[Node], list[Wall]],
-        exclude_direction=None,
-    ):
-        proximal_objects = {}
-        direction_list = [
-            direction
-            for direction in iter(Direction)
-            if direction != exclude_direction and direction != pygame.K_a
-        ]
-        for direction in direction_list:
-            direction = group.sprites()[0].get_coordinates_in_direction(direction)
-            proximal_object = get_proximal_object(
-                curr_position, direction, desired_object_group=group
-            )
-            proximal_objects[direction] = proximal_object
-        return proximal_objects
 
     def check_viable_path(self, player_index: int, player_center):
         seen = {}
@@ -106,18 +67,12 @@ class Board:
                 current_vertex = vertex
                 seen[current_vertex] = True
                 stack.append(current_vertex)
-                neighbors = self.get_objects_around_node(
-                    current_vertex, group=self.nodes
-                )
-                walls_between_neighbors = self.get_objects_around_node(
-                    current_vertex, group=self.walls
-                )
+                neighbors = self.get_nodes_around_node(current_vertex)
+                walls_between_neighbors = self.get_walls_around_node(current_vertex)
                 valid_neighbors = []
                 for direction, wall in walls_between_neighbors.items():
                     if wall and not wall.is_occupied:
-                        # multiply direction by 2 to get node direction from wall direction tuple
-                        valid_direction = tuple(2 * d for d in direction)
-                        valid_neighbors.append(neighbors[valid_direction])
+                        valid_neighbors.append(neighbors[direction])
 
                 for neighboring_node in valid_neighbors:
                     if neighboring_node.position not in seen:
@@ -214,7 +169,7 @@ class Board:
         player_direction = []
         for direction in Direction:
             offset = Node.get_coordinates_in_direction(direction)
-            possible_position = tuple(map(sum, zip(current_node_coordinates, offset)))
+            possible_position = self.add_coordinates(current_node_coordinates, offset)
             if possible_position == other_occupied_node_coordinates:
                 player_direction.append(direction)
 

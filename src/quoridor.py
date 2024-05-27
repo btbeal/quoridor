@@ -162,7 +162,7 @@ class Quoridor(RenderMixin):
 
     def _wall_is_legal(self, wall):
         board = self.board
-        adjacent_wall = self.board.get_adjacent_wall(wall)
+        adjacent_wall = board.get_adjacent_wall(wall)
         if adjacent_wall and not adjacent_wall.is_occupied:
             proposed_new_wall = pygame.Rect.union(wall.rect, adjacent_wall.rect)
             if not board.is_rect_intersecting_existing_wall(proposed_new_wall):
