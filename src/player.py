@@ -83,7 +83,7 @@ class AIPlayer(Player):
             return np.random.choice(self.action_size)
         with torch.no_grad():
             q_values = self.model(torch.tensor(state, dtype=torch.float32))[0]
-        return torch.argmax(q_values).item() # returns action
+        return torch.argmax(q_values).item()
 
     def _learn(self, batch_samples):
         batch_states, batch_targets = [], []
@@ -108,5 +108,13 @@ class AIPlayer(Player):
             self.optimizer.step()
 
         return loss.item()
+
+    def _adjust_epsilon(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
+    def replay(self, batch_size):
+        samples = np.random.sample(self.memory, batch_size)
+        return self._learn(samples)
 
 
