@@ -1,9 +1,8 @@
 from collections import deque
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import numpy as np
 import pygame
+import torch
+import torch.nn as nn
 
 
 class Player(pygame.sprite.Sprite):
@@ -98,5 +97,16 @@ class AIPlayer(Player):
                     target = r + self.gamma * pred.max()
             target_all = self.model(torch.tensor(s, dtype=torch.float32))[0]
             target_all[a] = target
+            batch_states.append(s.flatten())
+            batch_targets.append(target_all)
+            self._adjust_epsilon()
+            self.optimizer.zero_grad()
+            pred = self.model(torch.tensor(batch_states,
+                                           dtype=torch.float32))
+            loss = self.loss_fn(pred, torch.stack(batch_targets))
+            loss.backward()
+            self.optimizer.step()
+
+        return loss.item()
 
 
