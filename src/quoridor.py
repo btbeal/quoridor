@@ -54,6 +54,8 @@ class Quoridor(RenderMixin):
             ),
         ]
 
+    def action_space(self):
+
     def play_game(self):
         current_player_index = 0
         while True:
@@ -71,11 +73,9 @@ class Quoridor(RenderMixin):
                     index = np.random.choice(range(length_of_set))
                     coords = list(potential_coordinates_for_move)[index]
                     if random_move_type == 'place_wall':
-                        wall = next(wall for wall in board.walls if wall.rect.center == coords)
-                        current_player.place_wall(board, wall)
+                        current_player.place_wall(board, coords)
                     else:
-                        node = next(node for node in board.nodes if node.rect.center == coords)
-                        current_player.move_player(node, board.nodes)
+                        current_player.move_player(board, coords)
 
                     success=True
 

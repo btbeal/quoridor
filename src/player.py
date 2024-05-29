@@ -28,7 +28,8 @@ class Player(pygame.sprite.Sprite):
 
         return None
 
-    def place_wall(self, board, validated_wall):
+    def place_wall(self, board, coords):
+        validated_wall = next(wall for wall in board.walls if wall.rect.center == coords)
         adjacent_wall = board.get_adjacent_wall(validated_wall)
         proposed_new_wall = pygame.Rect.union(validated_wall.rect, adjacent_wall.rect)
         validated_wall.is_occupied = True
@@ -37,8 +38,10 @@ class Player(pygame.sprite.Sprite):
         adjacent_wall.kill()
         self.total_walls -= 1
 
-    def move_player(self, new_node, all_nodes):
-        current_node = self.current_node(all_nodes)
+    def move_player(self, board, coords):
+        nodes = board.nodes
+        new_node = next(node for node in nodes if node.rect.center == coords)
+        current_node = self.current_node(nodes)
         current_node.is_occupied = False
         new_node.is_occupied = True
         self.rect.center = new_node.rect.center
