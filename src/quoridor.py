@@ -32,6 +32,7 @@ class Quoridor(RenderMixin):
         # Set up players and board.
         self.players = players if players else Quoridor.default_players()
         self.board = Board(self.players)
+        self.action_space = self.default_action_space()
         self.player_group = Group()
         self.player_group.add(self.players)
 
@@ -54,7 +55,12 @@ class Quoridor(RenderMixin):
             ),
         ]
 
-    def action_space(self):
+    def default_action_space(self, eligible_movements=('LEFT', 'RIGHT', 'UP', 'DOWN', 'ADJACENT_1', 'ADJACENT_2')):
+        wall_actions = {i: ('wall_placement', wall.rect.center) for i, wall in enumerate(self.board.walls)}
+        len_wall_actions = len(wall_actions)
+        movement_actions = {i + len_wall_actions: ('move_pawn', movement) for i, movement in enumerate(eligible_movements)}
+        action_dict = {**wall_actions, **movement_actions}
+        return action_dict
 
     def play_game(self):
         current_player_index = 0
