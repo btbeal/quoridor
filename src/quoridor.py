@@ -1,8 +1,6 @@
-import time
-
-import numpy as np
 import pygame
 from pygame.sprite import Group
+import time
 
 from src.board import Board
 from src.constants import (
@@ -83,7 +81,7 @@ class Quoridor(RenderMixin):
         action_list = wall_actions + pawn_actions
         return action_list
 
-    def play_game(self):
+    def run_game(self):
         current_player_index = 0
         while True:
             current_player = self.players[current_player_index]
@@ -91,7 +89,7 @@ class Quoridor(RenderMixin):
                 success = False
                 while not success:
                     board = self.board
-                    state = board.get_state()
+                    state = board.get_state(current_player)
                     legal_move_dict = self._get_legal_moves(current_player)
                     legal_wall_cords = legal_move_dict['place_wall']
                     legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
@@ -106,7 +104,7 @@ class Quoridor(RenderMixin):
 
                     success = True
 
-                time.sleep(0.5)
+                time.sleep(0.1)
                 current_player_index = (current_player_index + 1) % len(self.players)
                 self._render(current_player)
 
@@ -232,7 +230,9 @@ class Quoridor(RenderMixin):
             wall_between_players = walls_around_player_node_dict[other_player_direction]
             if wall_between_players and not wall_between_players.is_occupied:
                 for direction in adjacent_directions:
-                    is_legal_move, direction_tuple, node = self._is_legal_lateral_move(direction, other_player_node.rect.center)
+                    is_legal_move, direction_tuple, node = self._is_legal_lateral_move(
+                        direction, other_player_node.rect.center, current_player
+                    )
                     if is_legal_move:
                         eligible_adjacent_directions[direction_tuple] = node
 

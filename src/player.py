@@ -63,6 +63,19 @@ class AIPlayer(Player):
         self.epsilon_decay = epsilon_decay
         self.lr = learning_rate
         self.model = None
+        self.loss_fn = None
+        self.optimizer = None
+
+    def append_model(self, state_size, action_space_size):
+        self.model = nn.Sequential(nn.Linear(state_size, 256),
+                                   nn.ReLU(),
+                                   nn.Linear(256, 128),
+                                   nn.ReLU(),
+                                   nn.Linear(128, 64),
+                                   nn.ReLU(),
+                                   nn.Linear(64, action_space_size))
+        self.loss_fn = nn.MSELoss()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
 
     def remember(self, transition):
         self.memory.append(transition)
@@ -115,5 +128,3 @@ class AIPlayer(Player):
     def replay(self, batch_size):
         samples = np.random.sample(self.memory, batch_size)
         return self._learn(samples)
-
-
