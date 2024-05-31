@@ -6,7 +6,8 @@ from pygame.rect import Rect
 
 from src.node import Node
 from src.wall import Wall
-from src.constants import DISTANCE, HALF_DISTANCE, SPACES, TERMINAL_NODE_Y, Direction, x
+from src.constants import DISTANCE, HALF_DISTANCE, SPACES, TERMINAL_NODE_Y, x
+from src.directions import Direction
 
 
 class Board:

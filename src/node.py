@@ -2,7 +2,8 @@ from typing import Tuple
 
 import pygame
 
-from src.constants import DISTANCE, HALF_DISTANCE, Direction
+from src.constants import DISTANCE, HALF_DISTANCE
+from src.directions import Direction
 
 
 class Node(pygame.sprite.Sprite):

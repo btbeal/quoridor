@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pygame
 from pygame.sprite import Group
@@ -10,14 +12,14 @@ from src.constants import (
     CELL,
     HALF_DISTANCE,
     TERMINAL_NODE_Y,
-    Direction,
+    x,
 )
-
+from src.directions import Direction
 from src.player import Player
 from src.render_mixin import RenderMixin
 
-
 DEFAULT_FONT_SIZE = 32
+WALL_EDGE_COORD = x[-1]
 
 
 class Quoridor(RenderMixin):
@@ -55,12 +57,31 @@ class Quoridor(RenderMixin):
             ),
         ]
 
-    def default_action_space(self, eligible_movements=('LEFT', 'RIGHT', 'UP', 'DOWN', 'ADJACENT_1', 'ADJACENT_2')):
-        wall_actions = {i: ('wall_placement', wall.rect.center) for i, wall in enumerate(self.board.walls)}
-        len_wall_actions = len(wall_actions)
-        movement_actions = {i + len_wall_actions: ('move_pawn', movement) for i, movement in enumerate(eligible_movements)}
-        action_dict = {**wall_actions, **movement_actions}
-        return action_dict
+    def default_action_space(
+            self,
+            eligible_movements=(
+                    (Direction.UP, Direction.UP),
+                    (Direction.UP, Direction.RIGHT),
+                    (Direction.UP, Direction.LEFT),
+                    (Direction.DOWN, Direction.DOWN),
+                    (Direction.DOWN, Direction.RIGHT),
+                    (Direction.DOWN, Direction.LEFT),
+                    (Direction.RIGHT, Direction.DOWN),
+                    (Direction.RIGHT, Direction.UP),
+                    (Direction.RIGHT, Direction.UP),
+                    (Direction.LEFT, Direction.DOWN),
+                    (Direction.LEFT, Direction.RIGHT),
+                    (Direction.LEFT, Direction.LEFT),
+                    Direction.UP,
+                    Direction.DOWN,
+                    Direction.RIGHT,
+                    Direction.LEFT
+            )
+    ):
+        wall_actions = [wall.rect.center for wall in self.board.walls if WALL_EDGE_COORD not in wall.rect.center]
+        pawn_actions = [direction_tuple for direction_tuple in eligible_movements]
+        action_list = wall_actions + pawn_actions
+        return action_list
 
     def play_game(self):
         current_player_index = 0
@@ -72,19 +93,20 @@ class Quoridor(RenderMixin):
                     board = self.board
                     state = board.get_state()
                     legal_move_dict = self._get_legal_moves(current_player)
-                    eligible_move_types = [key for key, value in legal_move_dict.items() if legal_move_dict[key]]
-                    random_move_type = np.random.choice(eligible_move_types)
-                    potential_coordinates_for_move = legal_move_dict[random_move_type]
-                    length_of_set = len(potential_coordinates_for_move)
-                    index = np.random.choice(range(length_of_set))
-                    coords = list(potential_coordinates_for_move)[index]
-                    if random_move_type == 'place_wall':
-                        current_player.place_wall(board, coords)
+                    legal_wall_cords = legal_move_dict['place_wall']
+                    legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
+                    legal_moves = legal_wall_cords + legal_pawn_moves
+                    action_index = current_player.choose_action(self.action_space, state, legal_moves)
+                    action = self.action_space[action_index]
+                    if action in legal_wall_cords:
+                        current_player.place_wall(board, action)
                     else:
-                        current_player.move_player(board, coords)
+                        node = legal_move_dict['move_pawn'].get(action)
+                        current_player.move_player(board, node.rect.center)
 
-                    success=True
+                    success = True
 
+                time.sleep(0.5)
                 current_player_index = (current_player_index + 1) % len(self.players)
                 self._render(current_player)
 
@@ -106,7 +128,7 @@ class Quoridor(RenderMixin):
                                 success = False
 
                             if self._wall_is_legal(wall_to_place) and current_player.total_walls > 0:
-                                current_player.place_wall(self.board, wall_to_place)
+                                current_player.place_wall(self.board, wall_to_place.rect.center)
                                 success = True
                         elif event.type == pygame.KEYDOWN:
                             pressed_keys = pygame.key.get_pressed()
@@ -118,7 +140,7 @@ class Quoridor(RenderMixin):
                                 legal_adjacent_moves = self._get_legal_adjacent_moves(current_player)
                                 if adjacent_movement in legal_adjacent_moves:
                                     new_node = legal_adjacent_moves[adjacent_movement]
-                                    current_player.move_player(new_node, self.board.nodes)
+                                    current_player.move_player(self.board, new_node.rect.center)
                                     success = True
 
                             elif key_list:
@@ -126,7 +148,7 @@ class Quoridor(RenderMixin):
                                 legal_lateral_moves = self._get_legal_lateral_moves(current_player)
                                 if movement in legal_lateral_moves:
                                     new_node = legal_lateral_moves[movement]
-                                    current_player.move_player(new_node, self.board.nodes)
+                                    current_player.move_player(self.board, new_node.rect.center)
                                     success = True
 
                     self._render(current_player)
@@ -145,19 +167,21 @@ class Quoridor(RenderMixin):
                 eligible_wall_coords.append(wall.rect.center)
 
         eligible_lateral_moves = self._get_legal_lateral_moves(current_player)
-        eligible_lateral_move_coords = [node.rect.center for direction, node in eligible_lateral_moves.items() if node]
         eligible_adjacent_moves = self._get_legal_adjacent_moves(current_player)
-        eligible_adjacent_move_coords = [node.rect.center for direction, node in eligible_adjacent_moves.items() if node]
-        all_eligible_move_coords = eligible_lateral_move_coords + eligible_adjacent_move_coords
+
+        pawn_move_dict = {**eligible_adjacent_moves, **eligible_lateral_moves}
 
         move_dict = {
             'place_wall': eligible_wall_coords,
-            'move_pawn': all_eligible_move_coords
+            'move_pawn': pawn_move_dict
         }
 
         return move_dict
 
     def _get_legal_walls(self):
+        """
+        :return: a list of wall coordinates that are currently eligible to be placed
+        """
         walls = self.board.walls
         legal_walls = []
         for wall in walls:
@@ -192,6 +216,11 @@ class Quoridor(RenderMixin):
         return False
 
     def _get_legal_adjacent_moves(self, current_player):
+        """
+        :param current_player:
+        :return: dictionary of structure {DirectionTuple: node} for  all eligible adjacent moves
+        (if no eligible moves, returns {})
+        """
         other_player_direction = self.board.get_direction_of_proximal_player(current_player)
         board = self.board
         eligible_adjacent_directions = {}
@@ -203,23 +232,28 @@ class Quoridor(RenderMixin):
             wall_between_players = walls_around_player_node_dict[other_player_direction]
             if wall_between_players and not wall_between_players.is_occupied:
                 for direction in adjacent_directions:
-                    is_legal_move, node = self._is_legal_lateral_move(direction, other_player_node.rect.center)
+                    is_legal_move, direction_tuple, node = self._is_legal_lateral_move(direction, other_player_node.rect.center)
                     if is_legal_move:
-                        eligible_adjacent_directions[direction] = node
+                        eligible_adjacent_directions[direction_tuple] = node
 
         return eligible_adjacent_directions
 
     def _get_legal_lateral_moves(self, current_player):
+        """
+        :param current_player:
+        :return: dictionary of structure {DirectionTuple: node} for  all eligible moves (UP, DOWN, LEFT, RIGHT)
+        (if no eligible moves, returns {})
+        """
         legal_lateral_moves = {}
         starting_node = current_player.rect.center
         for direction in Direction:
-            is_legal_move, node = self._is_legal_lateral_move(direction, starting_node)
+            is_legal_move, direction_tuple, node = self._is_legal_lateral_move(direction, starting_node, current_player)
             if is_legal_move:
-                legal_lateral_moves[direction] = node
+                legal_lateral_moves[direction_tuple] = node
 
         return legal_lateral_moves
 
-    def _is_legal_lateral_move(self, direction, starting_node):
+    def _is_legal_lateral_move(self, direction, starting_node, current_player):
         board = self.board
         proximal_node_dict = board.get_nodes_around_node(starting_node, [direction])
         proximal_node = proximal_node_dict[direction]
@@ -227,15 +261,15 @@ class Quoridor(RenderMixin):
         proximal_wall_dict = board.get_walls_around_node(starting_node, [direction])
         proximal_wall = proximal_wall_dict[direction]
         if not proximal_wall or proximal_wall.is_occupied or not proximal_node:
-            return False, None
+            return False, None, None
 
         if not proximal_node.is_occupied:
-            return True, proximal_node
+            return True, direction, proximal_node
 
         next_proximal_wall_dict = board.get_walls_around_node(proximal_node.rect.center, [direction])
         if next_proximal_wall_dict[direction] and not next_proximal_wall_dict[direction].is_occupied:
             next_proximal_node_dict = board.get_nodes_around_node(proximal_node.rect.center, [direction])
             next_proximal_node = next_proximal_node_dict[direction]
-            return True, next_proximal_node
+            return True, (direction, direction) if current_player.is_ai else direction, next_proximal_node
 
-        return False, None
+        return False, None, None

@@ -2,7 +2,8 @@ from typing import Tuple
 
 import pygame
 
-from src.constants import SMALL_CELL, HALF_DISTANCE, Direction
+from src.constants import SMALL_CELL, HALF_DISTANCE
+from src.directions import Direction
 
 
 WHITE = (255, 255, 255)

@@ -1,27 +1,26 @@
 import pygame
 
 from src.quoridor import Quoridor
-from src.player import Player
+from src.player import Player, AIPlayer
 from src.constants import GAME_SIZE, HALF_DISTANCE, CELL
 
 players = [
-    Player(
+    AIPlayer(
         index=0,
         name="Orange",
         color=pygame.Color("coral"),
         position=(GAME_SIZE * 0.5, HALF_DISTANCE),
-        radius=0.5 * CELL,
-        is_ai=True
+        radius=0.5 * CELL
     ),
-    Player(
+    AIPlayer(
         index=1,
         name="Blue",
         color=pygame.Color("blue"),
         position=(GAME_SIZE * 0.5, GAME_SIZE - HALF_DISTANCE),
-        radius=0.5 * CELL,
-        is_ai=True
+        radius=0.5 * CELL
     ),
 ]
+
 
 if __name__ == "__main__":
     quoridor = Quoridor(players=players)
