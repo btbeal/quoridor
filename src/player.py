@@ -28,7 +28,8 @@ class Player(pygame.sprite.Sprite):
 
         return None
 
-    def place_wall(self, board, validated_wall):
+    def place_wall(self, board, coords):
+        validated_wall = next(wall for wall in board.walls if wall.rect.center == coords)
         adjacent_wall = board.get_adjacent_wall(validated_wall)
         proposed_new_wall = pygame.Rect.union(validated_wall.rect, adjacent_wall.rect)
         validated_wall.is_occupied = True
@@ -37,8 +38,10 @@ class Player(pygame.sprite.Sprite):
         adjacent_wall.kill()
         self.total_walls -= 1
 
-    def move_player(self, new_node, all_nodes):
-        current_node = self.current_node(all_nodes)
+    def move_player(self, board, coords):
+        nodes = board.nodes
+        new_node = next(node for node in nodes if node.rect.center == coords)
+        current_node = self.current_node(nodes)
         current_node.is_occupied = False
         new_node.is_occupied = True
         self.rect.center = new_node.rect.center
@@ -47,42 +50,51 @@ class Player(pygame.sprite.Sprite):
 class AIPlayer(Player):
 
     def __init__(
-        self, env, discount_factor=0.95,
+        self, index, name, position, color, radius, discount_factor=0.95,
         epsilon_greedy=1.0, epsilon_min=0.01,
         epsilon_decay=0.995, learning_rate=1e-3,
         max_memory_size=2000
     ):
-        self.env = env
-        self.state_size = env.observation_space.shape[0]
-        self.action_size = env.action_space.n
+        super().__init__(index, name, position, color, radius, is_ai=True)
         self.memory = deque(maxlen=max_memory_size)
         self.gamma = discount_factor
         self.epsilon = epsilon_greedy
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.lr = learning_rate
-        self._build_nn_model()
+        self.model = None
+        self.loss_fn = None
+        self.optimizer = None
 
-    def _build_nn_model(self):
-        self.model = nn.Sequential(nn.Linear(self.state_size, 256),
+    def append_model(self, state_size, action_space_size):
+        self.model = nn.Sequential(nn.Linear(state_size, 256),
                                    nn.ReLU(),
                                    nn.Linear(256, 128),
                                    nn.ReLU(),
                                    nn.Linear(128, 64),
                                    nn.ReLU(),
-                                   nn.Linear(64, self.action_size))
+                                   nn.Linear(64, action_space_size))
         self.loss_fn = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(), self.lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
 
     def remember(self, transition):
         self.memory.append(transition)
 
-    def choose_action(self, state):
-        if np.random.rand() <= self.epsilon:
-            return np.random.choice(self.action_size)
+    def choose_action(self, action_space, state, legal_moves):
+        ineligible_indices = []
+        eligible_indices = []
+        for i, action_item in enumerate(action_space):
+            if action_item in legal_moves:
+                eligible_indices.append(i)
+            else:
+                ineligible_indices.append(i)
+        if 0 <= self.epsilon:
+        #if np.random.rand() <= self.epsilon:
+            return np.random.choice(eligible_indices)
         with torch.no_grad():
             q_values = self.model(torch.tensor(state, dtype=torch.float32))[0]
+            q_values[ineligible_indices] = float('-inf')
+
         return torch.argmax(q_values).item()
 
     def _learn(self, batch_samples):
@@ -116,5 +128,3 @@ class AIPlayer(Player):
     def replay(self, batch_size):
         samples = np.random.sample(self.memory, batch_size)
         return self._learn(samples)
-
-
