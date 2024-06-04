@@ -89,7 +89,7 @@ class AIPlayer(Player):
             else:
                 ineligible_indices.append(i)
         if 0 <= self.epsilon:
-        #if np.random.rand() <= self.epsilon:
+        ##if np.random.rand() <= self.epsilon:
             return np.random.choice(eligible_indices)
         with torch.no_grad():
             q_values = self.model(torch.tensor(state, dtype=torch.float32))[0]
