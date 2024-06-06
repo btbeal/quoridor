@@ -1,22 +1,21 @@
-import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
 from collections import namedtuple, deque
 import random
 
 
 class DQN(nn.Module):
     def __init__(self, state_size, action_size):
-        super(DQN, self).__init__()
-        self.layer1 = nn.Linear(state_size, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, action_size)
+        super().__init__()
+        self.linear_relu = nn.Sequential(
+            nn.Linear(state_size, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, action_size)
+        )
 
     def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        return self.layer3(x)
+        return self.linear_relu(x)
 
 
 class ExperienceReplay:

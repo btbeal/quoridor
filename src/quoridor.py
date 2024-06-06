@@ -364,20 +364,19 @@ class QuoridorGym(Quoridor):
 
         # load_model()
         losses = []
-        batch_size = 500
+        batch_size = 10
         current_player_index = 0
         total_loops = 0
-        for i in range(self.max_memory_size):
+        for i in range(batch_size):
             current_player = self.players[current_player_index]
             state, action_index, next_state, reward, done = self._step(current_player_index)
             self.memory.push_memory(state, action_index, next_state, reward, done)
             total_loops += 1
-            print(total_loops)
             if done:
                 self._reset_env()
             current_player_index = (current_player_index + 1) % len(self.players)
 
-        for _ in range(500):
+        for _ in range(100):
             done = False
             while not done:
                 state, action_index, next_state, reward, done = self._step(current_player_index)
@@ -385,9 +384,10 @@ class QuoridorGym(Quoridor):
                 self._render(current_player)
                 if done:
                     self._reset_env()
-                batch_samples = self.memory.sample_memories(batch_size)
+                batch_samples = self.memory.sample_memories(batch_size-2)
                 loss = self._learn(batch_samples)
                 losses.append(loss)
+                print(loss)
                 total_loops += 1
                 current_player_index = (current_player_index + 1) % len(self.players)
 
@@ -415,16 +415,16 @@ class QuoridorGym(Quoridor):
                 if done:
                     target = r
                 else:
-                    pred = self.model(torch.tensor(next_s, dtype=torch.float32))[0]
+                    pred = self.model(torch.tensor(next_s, dtype=torch.float32).unsqueeze(0))[0]
                     target = r + self.gamma * pred.max()
-            target_all = self.model(torch.tensor(s, dtype=torch.float32))[0]
+            target_all = self.model(torch.tensor(s, dtype=torch.float32).unsqueeze(0))[0]
+            print(target_all)
             target_all[a] = target
             batch_states.append(s.flatten())
             batch_targets.append(target_all)
             self._adjust_epsilon()
             self.optimizer.zero_grad()
-            pred = self.model(torch.tensor(batch_states,
-                                           dtype=torch.float32))
+            pred = self.model(torch.tensor(batch_states, dtype=torch.float32))
             loss = self.loss_fn(pred, torch.stack(batch_targets))
             loss.backward()
             self.optimizer.step()
