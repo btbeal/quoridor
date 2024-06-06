@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from collections import namedtuple, deque
-from numpy import random
+import random
 
 
 class DQN(nn.Module):
@@ -33,6 +33,6 @@ class ExperienceReplay:
         return len(self.memory)
 
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done'))
 
 

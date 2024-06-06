@@ -4,14 +4,14 @@ from src.constants import GAME_SIZE, SEMI_BLACK, WHITE
 
 
 class RenderMixin:
-    def _render(self, current_player: Player):
+    def _render(self, current_player: Player, render_win_screen=False):
         self.screen.fill(WHITE)
         self.board.walls.update()
         self.board.walls.draw(self.screen)
         self.board.nodes.draw(self.screen)
         self.player_group.draw(self.screen)
         self._render_metadata(current_player)
-        if self._is_winner(current_player):
+        if self._is_winner(current_player) and render_win_screen:
             self._render_winner_screen(current_player=current_player)
         pygame.display.flip()
 
