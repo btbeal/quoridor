@@ -86,52 +86,6 @@ class Quoridor(RenderMixin):
         action_list = wall_actions + pawn_actions
         return action_list
 
-    def ai_gym(self, games_to_sim=500):
-        for player in self.players:
-            if not player.is_ai:
-                raise RuntimeError('Players must be AI to hit the gym')
-
-        state_size = len(self.board.get_state(current_player=self.players[0]))
-        action_size = len(self.action_space)
-        # load_model()
-        policy_dqn = DQN(state_size=state_size, action_size=action_size)
-        target_dqn = DQN(state_size=state_size, action_size=action_size)
-        optimizer = optim.AdamW(policy_dqn.parameters(), lr=1e-3, amsgrad=True)
-        losses = []
-        memory_capacity = 2000
-        experience_replay = ExperienceReplay(memory_capacity)
-        batch_size = 500
-        current_player_index = 0
-        total_loops = 0
-        for _ in range(games_to_sim):
-            done = False
-            while not done:
-                current_player = self.players[current_player_index]
-                board = self.board
-                state = board.get_state(current_player)
-                legal_move_dict = self._get_legal_moves(current_player)
-                legal_wall_cords = legal_move_dict['place_wall']
-                legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
-                legal_moves = legal_wall_cords + legal_pawn_moves
-                action_index = current_player.choose_action(self.action_space, state, legal_moves, model=policy_dqn)
-
-                action = self.action_space[action_index]
-                if action in legal_wall_cords:
-                    current_player.place_wall(board, action)
-                else:
-                    node = legal_move_dict['move_pawn'].get(action)
-                    current_player.move_player(board, node.rect.center)
-
-                next_state = board.get_state(current_player)
-                done = self._is_winner(current_player)
-                reward = 100 if done else -1
-                experience_replay.push_memory(state, action_index, next_state, reward, done)
-                batch_samples = experience_replay.sample_memories(batch_size)
-                loss = current_player.learn(batch_samples, policy_dqn)
-                losses.append(loss)
-                total_loops += 1
-                current_player_index = (current_player_index + 1) % len(self.players)
-
     def run_game(self):
         current_player_index = 0
         while True:
@@ -325,9 +279,6 @@ class Quoridor(RenderMixin):
 
         return False, None, None
 
-    def _distribute_training_reward(self):
-        pass
-
 # Quoridor is game master so it just dictates rules
 # Agent really just plays moves requested and knows where it exists on the board
 # Who trains the DQN? A player should be able to use one, but cannot train one
@@ -337,38 +288,41 @@ class Quoridor(RenderMixin):
 class QuoridorGym(Quoridor):
     def __init__(
             self,
-            discount_factor=0.95,
+            gamma=0.95,
             epsilon_greedy=1.0,
-            epsilon_min=0.01,
+            epsilon_min=0.15,
             epsilon_decay=0.995,
             learning_rate=1e-3,
-            max_memory_size=2000
+            max_memory_size=2000,
+            update_target_every=50
     ):
         super().__init__()
         self.max_memory_size = max_memory_size
         self.memory = ExperienceReplay(max_memory_capacity=max_memory_size)
-        self.gamma = discount_factor
+        self.gamma = gamma
         self.epsilon = epsilon_greedy
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.lr = learning_rate
         self.model_store_path = None
         self.model = DQN(action_size=self.action_size, state_size=self.state_size) if not self.model_store_path else 1
+        self.target_model = DQN(action_size=self.action_size, state_size=self.state_size)
         self.loss_fn = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
+        self.update_target_every = update_target_every
 
-    def run_ai_gym(self, games_to_sim=500):
+    def run_ai_gym(self, games_to_sim=1000):
         for player in self.players:
             if not player.is_ai:
                 raise RuntimeError('Players must be AI to hit the gym')
 
         # load_model()
         losses = []
-        batch_size = 10
+        batch_size = 1000
+
         current_player_index = 0
         total_loops = 0
-        for i in range(batch_size):
-            current_player = self.players[current_player_index]
+        for i in range(self.max_memory_size):
             state, action_index, next_state, reward, done = self._step(current_player_index)
             self.memory.push_memory(state, action_index, next_state, reward, done)
             total_loops += 1
@@ -376,20 +330,31 @@ class QuoridorGym(Quoridor):
                 self._reset_env()
             current_player_index = (current_player_index + 1) % len(self.players)
 
-        for _ in range(100):
+        start_time = 0
+        end_time = 0
+        for episode in range(games_to_sim):
+            print(f"Episode #{episode}; time elapsed between last episode: {end_time - start_time}")
+            start_time = time.time()
             done = False
             while not done:
+                current_player = self.players[current_player_index]
                 state, action_index, next_state, reward, done = self._step(current_player_index)
                 self.memory.push_memory(state, action_index, next_state, reward, done)
                 self._render(current_player)
                 if done:
                     self._reset_env()
-                batch_samples = self.memory.sample_memories(batch_size-2)
+                batch_samples = self.memory.sample_memories(batch_size)
                 loss = self._learn(batch_samples)
                 losses.append(loss)
-                print(loss)
                 total_loops += 1
                 current_player_index = (current_player_index + 1) % len(self.players)
+                if episode % self.update_target_every == 0:
+                    self.update_target_network()
+
+            end_time = time.time()
+            self._adjust_epsilon()
+
+            print(losses[-1])
 
     def _choose_gym_action(self, state, legal_moves):
         ineligible_indices = []
@@ -402,7 +367,7 @@ class QuoridorGym(Quoridor):
         if np.random.rand() <= self.epsilon:
             return np.random.choice(eligible_indices)
         with torch.no_grad():
-            q_values = self.model(torch.tensor(state, dtype=torch.float32))[0]
+            q_values = self.model(torch.tensor(state, dtype=torch.float32).unsqueeze(0))[0]
             q_values[ineligible_indices] = float('-inf')
 
         return torch.argmax(q_values).item()
@@ -410,24 +375,23 @@ class QuoridorGym(Quoridor):
     def _learn(self, batch_samples):
         batch_states, batch_targets = [], []
         for transition in batch_samples:
-            s, a, r, next_s, done = transition
+            s, a, next_s, r, done = transition
             with torch.no_grad():
                 if done:
                     target = r
                 else:
-                    pred = self.model(torch.tensor(next_s, dtype=torch.float32).unsqueeze(0))[0]
+                    pred = self.model(torch.tensor(np.array(next_s), dtype=torch.float32).unsqueeze(0))[0]
                     target = r + self.gamma * pred.max()
-            target_all = self.model(torch.tensor(s, dtype=torch.float32).unsqueeze(0))[0]
-            print(target_all)
+                target_all = self.model(torch.tensor(np.array(s), dtype=torch.float32).unsqueeze(0))[0]
             target_all[a] = target
             batch_states.append(s.flatten())
             batch_targets.append(target_all)
-            self._adjust_epsilon()
-            self.optimizer.zero_grad()
-            pred = self.model(torch.tensor(batch_states, dtype=torch.float32))
-            loss = self.loss_fn(pred, torch.stack(batch_targets))
-            loss.backward()
-            self.optimizer.step()
+
+        self.optimizer.zero_grad()
+        pred = self.model(torch.tensor(np.array(batch_states), dtype=torch.float32))
+        loss = self.loss_fn(pred, torch.stack(batch_targets))
+        loss.backward()
+        self.optimizer.step()
 
         return loss.item()
 
@@ -459,6 +423,24 @@ class QuoridorGym(Quoridor):
 
         next_state = board.get_state(current_player)
         done = self._is_winner(current_player)
-        reward = 100 if done else -1
+        reward = self.assign_reward(current_player_index, done)
         return state, action_index, next_state, reward, done
+
+    def update_target_network(self):
+        self.target_model.load_state_dict(self.model.state_dict())
+
+    def assign_reward(self, current_player_index, done):
+        if done:
+            max_distance = SCREEN_SIZE_Y - HALF_DISTANCE
+            next_player_index = (current_player_index + 1) % len(self.players)
+            y_distance = self.players[current_player_index].rect.centery - self.players[next_player_index].rect.centery
+            reward = 1 - abs(y_distance/max_distance)
+            print(reward)
+            return reward
+
+        print(0)
+        return 0
+
+
+
 
