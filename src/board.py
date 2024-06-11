@@ -83,7 +83,7 @@ class Board:
 
         return False
 
-    def get_state(self, current_player=None):
+    def get_state(self):
         """
         Represents the board as 17 X 17 (SPACES X SPACES) matrix with the following notation:
             2 = all unoccupied walls
@@ -119,10 +119,7 @@ class Board:
             normalized_coordinates = self.normalize_coordinates(player.rect.center)
             game_state[normalized_coordinates] = player.matrix_representation
 
-        game_array = game_state.flatten()
-        player_id = [player.matrix_representation for player in self.players if player == current_player]
-        state_array = np.append(game_array, player_id)
-        return state_array
+        return game_state.flatten()
 
     @staticmethod
     def normalize_coordinates(coords, distance=HALF_DISTANCE):
