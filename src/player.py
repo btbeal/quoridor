@@ -3,12 +3,12 @@ import numpy as np
 import pygame
 import torch
 import torch.nn as nn
+from src.dqn import DQN, ExperienceReplay
 
 
 class Player(pygame.sprite.Sprite):
-    total_walls = 10
 
-    def __init__(self, index, name, position, color, radius, is_ai=False):
+    def __init__(self, index, name, position, color, radius, total_walls=10, is_ai=False):
         pygame.sprite.Sprite.__init__(self)
         self.color = color
         self.index = index
@@ -18,8 +18,16 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(self.image, self.color, (radius, radius), radius)
         self.rect = self.image.get_rect(center=position)
+        self.initial_position = position
         self.position = position
+        self.total_walls = total_walls
+        self.starting_walls = total_walls
         self.is_ai = is_ai
+
+    def reset(self):
+        self.rect.center = self.initial_position
+        self.rect.center = self.initial_position
+        self.total_walls = self.starting_walls
 
     def current_node(self, nodes):
         for node in nodes:
@@ -50,35 +58,36 @@ class Player(pygame.sprite.Sprite):
 class AIPlayer(Player):
 
     def __init__(
-        self, index, name, position, color, radius, discount_factor=0.95,
-        epsilon_greedy=1.0, epsilon_min=0.01,
-        epsilon_decay=0.995, learning_rate=1e-3,
-        max_memory_size=2000
+            self,
+            index,
+            name,
+            position,
+            color,
+            radius,
+            gamma=0.75,
+            epsilon_greedy=1.0,
+            epsilon_min=0.15,
+            epsilon_decay=0.995,
+            learning_rate=1e-3,
+            max_memory_size=2000,
+            update_target_every=50,
+            policy_model=None,
+            target_model=None
     ):
-        super().__init__(index, name, position, color, radius, is_ai=True)
-        self.memory = deque(maxlen=max_memory_size)
-        self.gamma = discount_factor
+        self.max_memory_size = max_memory_size
+        self.memory = ExperienceReplay(max_memory_capacity=max_memory_size)
+        self.gamma = gamma
         self.epsilon = epsilon_greedy
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.lr = learning_rate
-        self.model = None
-        self.loss_fn = None
-        self.optimizer = None
-
-    def append_model(self, state_size, action_space_size):
-        self.model = nn.Sequential(nn.Linear(state_size, 256),
-                                   nn.ReLU(),
-                                   nn.Linear(256, 128),
-                                   nn.ReLU(),
-                                   nn.Linear(128, 64),
-                                   nn.ReLU(),
-                                   nn.Linear(64, action_space_size))
+        self.model_store_path = None
+        self.policy_model = policy_model
+        self.target_model = target_model
         self.loss_fn = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
-
-    def remember(self, transition):
-        self.memory.append(transition)
+        self.optimizer = None
+        self.update_target_every = update_target_every
+        super(AIPlayer, self).__init__(index, name, position, color, radius, is_ai=True)
 
     def choose_action(self, action_space, state, legal_moves):
         ineligible_indices = []
@@ -88,43 +97,42 @@ class AIPlayer(Player):
                 eligible_indices.append(i)
             else:
                 ineligible_indices.append(i)
-        if 0 <= self.epsilon:
-        #if np.random.rand() <= self.epsilon:
+
+        if np.random.rand() <= self.epsilon:
             return np.random.choice(eligible_indices)
         with torch.no_grad():
-            q_values = self.model(torch.tensor(state, dtype=torch.float32))[0]
+            q_values = self.policy_model(torch.tensor(state, dtype=torch.float32).unsqueeze(0))[0]
             q_values[ineligible_indices] = float('-inf')
 
         return torch.argmax(q_values).item()
 
-    def _learn(self, batch_samples):
+    def learn(self, batch_samples):
         batch_states, batch_targets = [], []
         for transition in batch_samples:
-            s, a, r, next_s, done = transition
+            s, a, next_s, r, done = transition
             with torch.no_grad():
                 if done:
                     target = r
                 else:
-                    pred = self.model(torch.tensor(next_s, dtype=torch.float32))[0]
+                    pred = self.target_model(torch.tensor(np.array(next_s), dtype=torch.float32).unsqueeze(0))[0]
                     target = r + self.gamma * pred.max()
-            target_all = self.model(torch.tensor(s, dtype=torch.float32))[0]
+                target_all = self.policy_model(torch.tensor(np.array(s), dtype=torch.float32).unsqueeze(0))[0]
             target_all[a] = target
             batch_states.append(s.flatten())
             batch_targets.append(target_all)
-            self._adjust_epsilon()
-            self.optimizer.zero_grad()
-            pred = self.model(torch.tensor(batch_states,
-                                           dtype=torch.float32))
-            loss = self.loss_fn(pred, torch.stack(batch_targets))
-            loss.backward()
-            self.optimizer.step()
+
+        self.optimizer.zero_grad()
+        pred = self.policy_model(torch.tensor(np.array(batch_states), dtype=torch.float32))
+        loss = self.loss_fn(pred, torch.stack(batch_targets))
+        loss.backward()
+        self.optimizer.step()
 
         return loss.item()
 
-    def _adjust_epsilon(self):
+    def update_target_network(self):
+        self.target_model.load_state_dict(self.policy_model.state_dict())
+
+    def adjust_epsilon(self):
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-    def replay(self, batch_size):
-        samples = np.random.sample(self.memory, batch_size)
-        return self._learn(samples)

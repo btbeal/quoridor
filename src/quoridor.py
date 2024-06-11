@@ -1,7 +1,6 @@
+import numpy as np
 import pygame
 from pygame.sprite import Group
-import time
-
 from src.board import Board
 from src.constants import (
     SCREEN_SIZE_X,
@@ -13,8 +12,11 @@ from src.constants import (
     x,
 )
 from src.directions import Direction
-from src.player import Player
+from src.dqn import DQN
+from src.player import AIPlayer
 from src.render_mixin import RenderMixin
+import time
+import torch
 
 DEFAULT_FONT_SIZE = 32
 WALL_EDGE_COORD = x[-1]
@@ -30,23 +32,25 @@ class Quoridor(RenderMixin):
         self.font = pygame.font.SysFont('Arial', font_size)
 
         # Set up players and board.
-        self.players = players if players else Quoridor.default_players()
+        self.players = players if players else self.default_players()
         self.board = Board(self.players)
         self.action_space = self.default_action_space()
         self.player_group = Group()
+        self.state_size = len(self.board.get_state())
+        self.action_size = len(self.action_space)
         self.player_group.add(self.players)
 
     @staticmethod
     def default_players():
         return [
-            Player(
+            AIPlayer(
                 index=0,
                 name="Orange",
                 color=pygame.Color("coral"),
                 position=(GAME_SIZE * 0.5, HALF_DISTANCE),
                 radius=0.5 * CELL,
             ),
-            Player(
+            AIPlayer(
                 index=1,
                 name="Blue",
                 color=pygame.Color("blue"),
@@ -273,3 +277,107 @@ class Quoridor(RenderMixin):
             return True, (direction, direction) if current_player.is_ai else direction, next_proximal_node
 
         return False, None, None
+
+
+class QuoridorGym(Quoridor):
+    def __init__(
+            self,
+            games_to_sim=1000,
+            update_target_every=50
+    ):
+        super().__init__()
+        self.update_target_every = update_target_every
+        self.games_to_sim = games_to_sim
+
+    def run_ai_gym(self):
+        for player in self.players:
+            player.policy_model = DQN(action_size=self.action_size, state_size=self.state_size)
+            player.target_model = DQN(action_size=self.action_size, state_size=self.state_size)
+            player.optimizer = torch.optim.Adam(player.policy_model.parameters(), player.lr)
+
+        losses = []
+        batch_size = 1000
+        current_player_index = 0
+        total_loops = 0
+        current_player = self.players[current_player_index]
+        while len(current_player.memory) < batch_size:
+            print(len(current_player.memory))
+            current_player = self.players[current_player_index]
+            state, action_index, next_state, reward, done = self._step(current_player)
+            current_player.memory.push_memory(state, action_index, next_state, reward, done)
+            total_loops += 1
+            if done:
+                self._reset_env()
+            current_player_index = (current_player_index + 1) % len(self.players)
+
+        start_time = 0
+        end_time = 0
+        for episode in range(self.games_to_sim):
+            print(f"Episode #{episode}; time elapsed between last episode: {end_time - start_time}")
+            start_time = time.time()
+            done = False
+            next_player_index = 0
+            while not done:
+                current_player_index = next_player_index
+                current_player = self.players[current_player_index]
+                state, action_index, next_state, reward, done = self._step(current_player)
+                current_player.memory.push_memory(state, action_index, next_state, reward, done)
+                self._render(current_player)
+                if done:
+                    self._reset_env()
+                batch_samples = current_player.memory.sample_memories(batch_size)
+                loss = current_player.learn(batch_samples)
+                losses.append(loss)
+                total_loops += 1
+                next_player_index = (current_player_index + 1) % len(self.players)
+                if episode % self.update_target_every == 0:
+                    current_player.update_target_network()
+                    self.players[current_player_index].update_target_network()
+
+            end_time = time.time()
+            current_player.adjust_epsilon()
+
+            print(losses[-1])
+
+    def _reset_env(self):
+        for player in self.players:
+            player.reset()
+        self.board = Board(self.players)
+        self.player_group = Group()
+        self.player_group.add(self.players)
+
+    def _step(self, current_player):
+        board = self.board
+        state = board.get_state()
+        legal_move_dict = self._get_legal_moves(current_player)
+        legal_wall_cords = legal_move_dict['place_wall']
+        legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
+        legal_moves = legal_wall_cords + legal_pawn_moves
+        action_index = current_player.choose_action(self.action_space, state, legal_moves)
+        action = self.action_space[action_index]
+        if action in legal_wall_cords:
+            current_player.place_wall(board, action)
+        else:
+            node = legal_move_dict['move_pawn'].get(action)
+            current_player.move_player(board, node.rect.center)
+
+        next_state = board.get_state()
+        done = self._is_winner(current_player)
+        reward = self._assign_reward(current_player, done)
+        return state, action_index, next_state, reward, done
+
+    def _assign_reward(self, current_player, done):
+        if done:
+            max_distance = SCREEN_SIZE_Y - HALF_DISTANCE
+            next_player_index = (current_player.index + 1) % len(self.players)
+            y_distance = current_player.rect.centery - self.players[next_player_index].rect.centery
+            reward = 10*(1 - abs(y_distance/max_distance))
+            print(reward)
+            return reward
+
+        print(-0.1)
+        return -0.1
+
+
+
+
