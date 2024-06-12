@@ -21,9 +21,8 @@ class Board:
     2. Walls
     """
 
-    def __init__(self, players):
+    def __init__(self):
         self.nodes, self.walls = self._construct_board()
-        self.players = players
 
     def _construct_board(self) -> Tuple[list[Node], list[Wall]]:
         nodes = Group()
@@ -83,7 +82,7 @@ class Board:
 
         return False
 
-    def get_state(self):
+    def get_state(self, players):
         """
         Represents the board as 17 X 17 (SPACES X SPACES) matrix with the following notation:
             2 = all unoccupied walls
@@ -115,7 +114,7 @@ class Board:
             if not node.is_occupied:
                 game_state[normalized_coordinates] = 0
 
-        for player in self.players:
+        for player in players:
             normalized_coordinates = self.normalize_coordinates(player.rect.center)
             game_state[normalized_coordinates] = player.matrix_representation
 
