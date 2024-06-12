@@ -1,4 +1,4 @@
-import numpy as np
+import os
 import pygame
 from pygame.sprite import Group
 from src.board import Board
@@ -17,6 +17,7 @@ from src.player import AIPlayer
 from src.render_mixin import RenderMixin
 import time
 import torch
+import warnings
 
 DEFAULT_FONT_SIZE = 32
 WALL_EDGE_COORD = x[-1]
@@ -33,11 +34,9 @@ class Quoridor(RenderMixin):
 
         # Set up players and board.
         self.players = players if players else self.default_players()
-        self.board = Board(self.players)
+        self.board = Board()
         self.action_space = self.default_action_space()
         self.player_group = Group()
-        self.state_size = len(self.board.get_state())
-        self.action_size = len(self.action_space)
         self.player_group.add(self.players)
 
     @staticmethod
@@ -93,7 +92,7 @@ class Quoridor(RenderMixin):
                 success = False
                 while not success:
                     board = self.board
-                    state = board.get_state(current_player)
+                    state = board.get_state(self.players)
                     legal_move_dict = self._get_legal_moves(current_player)
                     legal_wall_cords = legal_move_dict['place_wall']
                     legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
@@ -128,6 +127,7 @@ class Quoridor(RenderMixin):
                             )
                             if not wall_to_place:
                                 success = False
+                                continue
 
                             if self._wall_is_legal(wall_to_place) and current_player.total_walls > 0:
                                 current_player.place_wall(self.board, wall_to_place.rect.center)
@@ -283,18 +283,35 @@ class QuoridorGym(Quoridor):
     def __init__(
             self,
             games_to_sim=1000,
-            update_target_every=50
+            update_target_every=50,
+            model_filenames=None
     ):
         super().__init__()
         self.update_target_every = update_target_every
         self.games_to_sim = games_to_sim
+        self.model_filenames = model_filenames
 
-    def run_ai_gym(self):
+    def give_players_a_brain(self):
+        state_size = len(self.board.get_state(self.players))
+        action_size = len(self.action_space)
         for player in self.players:
-            player.policy_model = DQN(action_size=self.action_size, state_size=self.state_size)
-            player.target_model = DQN(action_size=self.action_size, state_size=self.state_size)
+            player.policy_model = DQN(action_size=action_size, state_size=state_size)
+            player.target_model = DQN(action_size=action_size, state_size=state_size)
             player.optimizer = torch.optim.Adam(player.policy_model.parameters(), player.lr)
 
+        if self.model_filenames:
+            if len(self.model_filenames) != len(self.players):
+                raise ValueError(f"The number of players must be equivalent to the number of paths if paths are specified")
+
+            for player in self.players:
+                filename = self.model_filenames[player.index]
+                if os.path.exists(filename):
+                    self.load_checkpoints(player.policy_model, player.target_model, player.optimizer, filename)
+                else:
+                    warnings.warn('Model filenames were given but none were found; base models will be used for the remainder of the training')
+
+    def run_ai_gym(self):
+        self.give_players_a_brain()
         losses = []
         batch_size = 1000
         current_player_index = 0
@@ -312,7 +329,7 @@ class QuoridorGym(Quoridor):
 
         start_time = 0
         end_time = 0
-        for episode in range(self.games_to_sim):
+        for episode in range(2):
             print(f"Episode #{episode}; time elapsed between last episode: {end_time - start_time}")
             start_time = time.time()
             done = False
@@ -339,16 +356,20 @@ class QuoridorGym(Quoridor):
 
             print(losses[-1])
 
+        for player in self.players:
+            filename = self.model_filenames[player.index]
+            self.save_checkpoints(player.policy_model, player.optimizer, filename)
+
     def _reset_env(self):
         for player in self.players:
             player.reset()
-        self.board = Board(self.players)
+        self.board = Board()
         self.player_group = Group()
         self.player_group.add(self.players)
 
     def _step(self, current_player):
         board = self.board
-        state = board.get_state()
+        state = board.get_state(self.players)
         legal_move_dict = self._get_legal_moves(current_player)
         legal_wall_cords = legal_move_dict['place_wall']
         legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
@@ -361,7 +382,7 @@ class QuoridorGym(Quoridor):
             node = legal_move_dict['move_pawn'].get(action)
             current_player.move_player(board, node.rect.center)
 
-        next_state = board.get_state()
+        next_state = board.get_state(self.players)
         done = self._is_winner(current_player)
         reward = self._assign_reward(current_player, done)
         return state, action_index, next_state, reward, done
@@ -377,6 +398,21 @@ class QuoridorGym(Quoridor):
 
         print(-0.1)
         return -0.1
+
+    @staticmethod
+    def save_checkpoints(model, optimizer, filename):
+        checkpoint = {
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()
+        }
+        torch.save(checkpoint, filename)
+
+    @staticmethod
+    def load_checkpoints(policy_model, target_model, optimizer, filename):
+        checkpoint = torch.load(filename)
+        policy_model.load_state_dict(checkpoint['model_state_dict'])
+        target_model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
 
 

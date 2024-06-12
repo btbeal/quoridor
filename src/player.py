@@ -5,9 +5,22 @@ import torch
 import torch.nn as nn
 from src.dqn import DQN, ExperienceReplay
 
+#
+# class PlayerConfig:
+#     """
+#     External representation of a player with static information before
+#     board and model construction.
+#     """
+#     def __init__(self, index, name, position, color, radius, is_ai=False):
+#         self.index = index
+#         self.name = name
+#         self.position = position
+#         self.color = color
+#         self.radius = radius
+#         self.is_ai = is_ai
+
 
 class Player(pygame.sprite.Sprite):
-
     def __init__(self, index, name, position, color, radius, total_walls=10, is_ai=False):
         pygame.sprite.Sprite.__init__(self)
         self.color = color
