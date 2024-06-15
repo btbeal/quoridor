@@ -166,8 +166,3 @@ class Board:
                 return direction
 
         return None
-
-
-
-
-

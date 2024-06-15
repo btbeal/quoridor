@@ -1,9 +1,8 @@
-from collections import deque
 import numpy as np
 import pygame
 import torch
 import torch.nn as nn
-from src.dqn import DQN, ExperienceReplay
+from src.dqn import ExperienceReplay
 
 #
 # class PlayerConfig:
@@ -102,20 +101,27 @@ class AIPlayer(Player):
         self.update_target_every = update_target_every
         super(AIPlayer, self).__init__(index, name, position, color, radius, is_ai=True)
 
-    def choose_action(self, action_space, state, legal_moves):
-        ineligible_indices = []
-        eligible_indices = []
-        for i, action_item in enumerate(action_space):
-            if action_item in legal_moves:
-                eligible_indices.append(i)
-            else:
-                ineligible_indices.append(i)
+    def choose_action_index(self, action_space, state, legal_move_dict, randomly_move_pawn_probability=0.7):
+        legal_wall_cords = legal_move_dict['place_wall']
+        legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
+        legal_moves = legal_wall_cords + legal_pawn_moves
+        illegal_indices = [index for index, item in enumerate(action_space) if item not in legal_moves]
 
         if np.random.rand() <= self.epsilon:
-            return np.random.choice(eligible_indices)
+            if legal_wall_cords and legal_pawn_moves:
+                if np.random.rand() < randomly_move_pawn_probability:
+                    # NOTE: np.random.choice() doesn't work on lists of tuples, so we need to select random index
+                    # https://stackoverflow.com/questions/30821071/how-to-use-numpy-random-choice-in-a-list-of-tuples
+                    move = legal_pawn_moves[np.random.choice(range(len(legal_pawn_moves)))]
+                else:
+                    move = legal_wall_cords[np.random.choice(range(len(legal_wall_cords)))]
+            else:
+                move = legal_moves[np.random.choice(range(len(legal_moves)))]
+            return action_space.index(move)
+
         with torch.no_grad():
             q_values = self.policy_model(torch.tensor(state, dtype=torch.float32).unsqueeze(0))[0]
-            q_values[ineligible_indices] = float('-inf')
+            q_values[illegal_indices] = float('-inf')
 
         return torch.argmax(q_values).item()
 
