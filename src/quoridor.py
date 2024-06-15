@@ -93,12 +93,9 @@ class Quoridor(RenderMixin, QuoridorRulesMixin):
                     board = self.board
                     state = board.get_state(self.players)
                     legal_move_dict = self._get_legal_moves(current_player)
-                    legal_wall_cords = legal_move_dict['place_wall']
-                    legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
-                    legal_moves = legal_wall_cords + legal_pawn_moves
-                    action_index = current_player.choose_action(self.action_space, state, legal_moves)
+                    action_index = current_player.choose_action_index(self.action_space, state, legal_move_dict)
                     action = self.action_space[action_index]
-                    if action in legal_wall_cords:
+                    if action in legal_move_dict['place_wall']:
                         current_player.place_wall(board, action)
                     else:
                         node = legal_move_dict['move_pawn'].get(action)
@@ -106,7 +103,6 @@ class Quoridor(RenderMixin, QuoridorRulesMixin):
 
                     success = True
 
-                time.sleep(0.1)
                 current_player_index = (current_player_index + 1) % len(self.players)
                 self._render(current_player)
 
@@ -171,8 +167,13 @@ class QuoridorGym(Quoridor):
         self.update_target_every = update_target_every
         self.games_to_sim = games_to_sim
         self.model_filenames = model_filenames
+        self.give_players_a_brain()
 
     def give_players_a_brain(self):
+        """
+
+        :return:
+        """
         state_size = len(self.board.get_state(self.players))
         action_size = len(self.action_space)
         for player in self.players:
@@ -184,6 +185,9 @@ class QuoridorGym(Quoridor):
             if len(self.model_filenames) != len(self.players):
                 raise ValueError(f"The number of players must be equivalent to the number of paths if paths are specified")
 
+            if not isinstance(self.model_filenames, dict):
+                raise TypeError(f"Expected model_filenames to be dict but received {type(self.model_filenames)}")
+
             for player in self.players:
                 filename = self.model_filenames[player.index]
                 if os.path.exists(filename):
@@ -192,7 +196,6 @@ class QuoridorGym(Quoridor):
                     warnings.warn('Model filenames were given but none were found; base models will be used for the remainder of the training')
 
     def run_ai_gym(self):
-        self.give_players_a_brain()
         losses = []
         batch_size = 1000
         current_player_index = 0
@@ -252,12 +255,9 @@ class QuoridorGym(Quoridor):
         board = self.board
         state = board.get_state(self.players)
         legal_move_dict = self._get_legal_moves(current_player)
-        legal_wall_cords = legal_move_dict['place_wall']
-        legal_pawn_moves = list(legal_move_dict['move_pawn'].keys())
-        legal_moves = legal_wall_cords + legal_pawn_moves
-        action_index = current_player.choose_action(self.action_space, state, legal_moves)
+        action_index = current_player.choose_action_index(self.action_space, state, legal_move_dict)
         action = self.action_space[action_index]
-        if action in legal_wall_cords:
+        if action in legal_move_dict['place_wall']:
             current_player.place_wall(board, action)
         else:
             node = legal_move_dict['move_pawn'].get(action)
