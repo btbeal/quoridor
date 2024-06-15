@@ -16,7 +16,7 @@ To play a friend or an AI, you can open `main.py`
 and modify the players to be either the `Player` or `AIPlayer` class. The `Player` class representing a human
 player. Then:
 
-```aidl
+```
 python main.py
 ```
 Notably, the AIPlayer is currently untrained and will simply select random moves.
