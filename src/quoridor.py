@@ -195,7 +195,7 @@ class QuoridorGym(Quoridor):
                 else:
                     warnings.warn('Model filenames were given but none were found; base models will be used for the remainder of the training')
 
-    def run_ai_gym(self):
+    def run_training_session(self):
         losses = []
         batch_size = 1000
         current_player_index = 0
